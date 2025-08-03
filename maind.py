@@ -61,7 +61,7 @@ class Formula(Element):
 class Listing(Element):
     text: str
     caption: str
-    docx_listing_paragraph: Optional[DocxParagraph] = None
+    docx_listing_paragraphs: List[DocxParagraph] = field(default_factory=list)
     docx_caption_paragraph: Optional[DocxParagraph] = None
 
 # Неизвестный элемент
@@ -159,7 +159,13 @@ def extract_formula_and_caption(paragraph):
     return formula, caption
 
 def is_listing(paragraph):
-    return paragraph.style.name == 'Listing'
+    # Проверяем наличие границ (w:pBdr) в свойствах параграфа
+    pPr = paragraph._element.find('.//w:pPr', namespaces=nsmap)
+    has_borders = pPr is not None and pPr.find('.//w:pBdr', namespaces=nsmap) is not None
+    # Проверяем стиль Listing как запасной вариант
+    is_listing_style = paragraph.style.name == 'Listing'
+    # print(f"Checking listing: has_borders={has_borders}, is_listing_style={is_listing_style}")
+    return has_borders or is_listing_style
 
 # Основная функция парсинга
 def parse_document(doc_path):
@@ -253,19 +259,33 @@ def parse_document(doc_path):
                     parent.append(UndefinedElement(str(paragraph._element), paragraph))
                 i += 1
             elif is_listing(paragraph):
-                text = paragraph.text.strip()
+                listing_texts = [paragraph.text.strip() or "(empty)"]
+                listing_paragraphs = [paragraph]
+                j = i + 1
+                next_paragraph_index = paragraph_index
+                while (j < len(elements) and elements[j].tag.endswith('p') and 
+                       next_paragraph_index < len(doc.paragraphs) and
+                       is_listing(doc.paragraphs[next_paragraph_index]) and
+                       not is_listing_caption(doc.paragraphs[next_paragraph_index])):
+                    next_text = doc.paragraphs[next_paragraph_index].text.strip()
+                    listing_texts.append(next_text or "(empty)")
+                    listing_paragraphs.append(doc.paragraphs[next_paragraph_index])
+                    next_paragraph_index += 1
+                    j += 1
+                text = '\n'.join(listing_texts)
                 caption = None
                 caption_paragraph = None
-                if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
-                    paragraph_index < len(doc.paragraphs) and
-                    is_listing_caption(doc.paragraphs[paragraph_index])):
-                    caption = doc.paragraphs[paragraph_index].text.strip()
-                    caption_paragraph = doc.paragraphs[paragraph_index]
-                    paragraph_index += 1
-                    i += 1
+                if (j < len(elements) and elements[j].tag.endswith('p') and 
+                    next_paragraph_index < len(doc.paragraphs) and
+                    is_listing_caption(doc.paragraphs[next_paragraph_index])):
+                    caption = doc.paragraphs[next_paragraph_index].text.strip()
+                    caption_paragraph = doc.paragraphs[next_paragraph_index]
+                    next_paragraph_index += 1
+                    j += 1
                 parent = stack[-1]
-                parent.append(Listing(text, caption, paragraph, caption_paragraph))
-                i += 1
+                parent.append(Listing(text, caption, listing_paragraphs, caption_paragraph))
+                i = j
+                paragraph_index = next_paragraph_index
             else:
                 text = paragraph.text.strip()
                 if text:
@@ -313,7 +333,7 @@ def print_tree(elements, indent=0, prefix=""):
         elif isinstance(elem, Formula):
             content = f"Formula: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
         elif isinstance(elem, Listing):
-            content = f"Listing: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
+            content = f"Listing: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if len(elem.caption) and len(elem.caption) > 50 else ''}"
         elif isinstance(elem, UndefinedElement):
             content = f"Undefined: {elem.content[:50]}{'...' if len(elem.content) > 50 else ''}"
         
