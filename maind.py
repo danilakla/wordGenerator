@@ -4,6 +4,8 @@ from typing import List, Optional
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.table import Table as DocxTable
+from docx.oxml.ns import qn
+from docx.oxml.ns import nsmap  # Добавляем импорт nsmap
 
 # Базовый класс для элементов (без полей)
 class Element:
@@ -97,17 +99,33 @@ def is_listing_caption(paragraph):
     return bool(re.fullmatch(pattern, text))
 
 def has_image(paragraph):
-    return any(run.element.tag.endswith('pic') for run in paragraph.runs)
+    # Проверяем наличие изображения через runs или inline shapes
+    has_pic = any(run.element.tag.endswith('pic') for run in paragraph.runs)
+    has_inline = paragraph._element.xpath('.//wp:inline')
+    # print(f"Checking paragraph for image: has_pic={has_pic}, has_inline={has_inline}")
+    return has_pic or has_inline
 
 def extract_image(paragraph):
+    # Удаляем явное определение namespaces, используем nsmap
     for run in paragraph.runs:
         if run.element.tag.endswith('pic'):
-            blip = run.element.find('.//a:blip', namespaces=run.part._element.nsmap)
+            blip = run.element.find('.//a:blip', namespaces=nsmap)  # Используем nsmap
             if blip is not None:
-                rId = blip.embed
+                rId = blip.get(qn('r:embed'))
+                if rId and rId in paragraph.part.related_parts:
+                    image_part = paragraph.part.related_parts[rId]
+                    return image_part.blob
+
+    # Исправляем вызов xpath -> findall с nsmap
+    for inline in paragraph._element.findall('.//wp:inline', namespaces=nsmap):
+        blip = inline.find('.//a:blip', namespaces=nsmap)
+        if blip is not None:
+            rId = blip.get(qn('r:embed'))
+            if rId and rId in paragraph.part.related_parts:
                 image_part = paragraph.part.related_parts[rId]
                 return image_part.blob
-    return None
+                
+    return b''
 
 def has_formula(paragraph):
     return any(run.element.tag.endswith('oMath') for run in paragraph.runs)
