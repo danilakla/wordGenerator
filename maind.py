@@ -5,6 +5,7 @@ from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.table import Table as DocxTable
 from docx.oxml.ns import qn, nsmap
+from lxml import etree
 
 # Базовый класс для элементов (без полей)
 class Element:
@@ -81,17 +82,16 @@ def is_list_item(paragraph):
         return False
     style_name = paragraph.style.name.lower()
     return 'list' in style_name or 'bullet' in style_name or 'number' in style_name
+
 def get_list_type(paragraph):
-    # Упрощенная проверка типа списка по стилю
     if paragraph.style is None:
         return 'unordered'
-    
     style_name = paragraph.style.name.lower()
     if 'bullet' in style_name:
         return 'unordered'
     elif 'number' in style_name:
         return 'ordered'
-    return 'unordered'  # По умолчанию
+    return 'unordered'
 
 def is_table_caption(paragraph):
     text = paragraph.text.strip()
@@ -106,6 +106,11 @@ def is_image_caption(paragraph):
 def is_listing_caption(paragraph):
     text = paragraph.text.strip()
     pattern = r'^Листинг \d+\.\d+ – .+$'
+    return bool(re.fullmatch(pattern, text))
+
+def is_formula_caption(paragraph):
+    text = paragraph.text.strip()
+    pattern = r'^Формула \d+\.\d+ – .+$'
     return bool(re.fullmatch(pattern, text))
 
 def has_image(paragraph):
@@ -133,19 +138,20 @@ def extract_image(paragraph):
     return b''
 
 def has_formula(paragraph):
-    return any(run.element.tag.endswith('oMath') for run in paragraph.runs)
+    has_omath = paragraph._element.findall('.//m:oMath', namespaces=nsmap)
+    has_omathpara = paragraph._element.findall('.//m:oMathPara', namespaces=nsmap)
+    # print(f"Checking paragraph for formula: has_omath={len(has_omath) > 0}, has_omathpara={len(has_omathpara) > 0}")
+    return has_omath or has_omathpara
+
 
 def extract_formula_and_caption(paragraph):
-    caption = None
     formula_xml = []
-    for run in paragraph.runs:
-        text = run.text.strip()
-        if text.startswith('(') and text.endswith(')'):
-            caption = text
-        elif run.element.tag.endswith('oMath'):
-            formula_xml.append(run.element.xml)
+    omath = paragraph._element.findall('.//m:oMath', namespaces=nsmap)
+    omathpara = paragraph._element.findall('.//m:oMathPara', namespaces=nsmap)
+    for elem in omath + omathpara:
+        formula_xml.append(etree.tostring(elem, encoding='unicode'))
     formula = ''.join(formula_xml)
-    return formula, caption if formula else (None, None)
+    return formula, None  # Caption will be handled in parse_document
 
 def is_listing(paragraph):
     return paragraph.style.name == 'Listing'
@@ -175,7 +181,7 @@ def parse_document(doc_path):
             if is_header(paragraph):
                 level = get_header_level(paragraph)
                 text = paragraph.text.strip()
-                if not text:  # Пропускаем пустые заголовки
+                if not text:
                     i += 1
                     continue
                 while len(stack) > 1 and current_level >= level:
@@ -224,10 +230,22 @@ def parse_document(doc_path):
                 parent.append(Image(image_data, caption, paragraph, caption_paragraph))
                 i += 1
             elif has_formula(paragraph):
-                formula, caption = extract_formula_and_caption(paragraph)
+                formula, _ = extract_formula_and_caption(paragraph)
+                caption = None
+                caption_paragraph = None
+                if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
+                    paragraph_index < len(doc.paragraphs) and
+                    is_formula_caption(doc.paragraphs[paragraph_index])):
+                    caption = doc.paragraphs[paragraph_index].text.strip()
+                    caption_paragraph = doc.paragraphs[paragraph_index]
+                    paragraph_index += 1
+                    i += 1
                 if formula:
                     parent = stack[-1]
-                    parent.append(Formula(formula, caption, paragraph, None))
+                    parent.append(Formula(formula, caption, paragraph, caption_paragraph))
+                else:
+                    parent = stack[-1]
+                    parent.append(UndefinedElement(str(paragraph._element), paragraph))
                 i += 1
             elif is_listing(paragraph):
                 text = paragraph.text.strip()
@@ -245,7 +263,7 @@ def parse_document(doc_path):
                 i += 1
             else:
                 text = paragraph.text.strip()
-                if text:  # Пропускаем пустые параграфы
+                if text:
                     parent = stack[-1]
                     parent.append(Paragraph(text, paragraph))
                 i += 1
