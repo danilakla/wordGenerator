@@ -1,79 +1,14 @@
-from dataclasses import dataclass, field
 import re
-from typing import List, Optional
+from typing import List
+from elements import ListElement, Paragraph, UndefinedElement
+from elements import Element, Formula, Header, Image, Listing, Table
+import re
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
-from docx.table import Table as DocxTable
 from docx.oxml.ns import qn, nsmap
 from lxml import etree
 
-# Базовый класс для элементов (без полей)
-class Element:
-    pass
-
-# Заголовок
-@dataclass
-class Header(Element):
-    level: int
-    text: str
-    children: List['Element'] = field(default_factory=list)
-    docx_element: Optional[DocxParagraph] = None
-    text_number_of_element: str
-
-# Параграф
-@dataclass
-class Paragraph(Element):
-    text: str
-    docx_element: Optional[DocxParagraph] = None
-
-# Список
-@dataclass
-class ListElement(Element):
-    items: List[str]
-    list_type: str
-    docx_elements: List[DocxParagraph] = field(default_factory=list)
-
-# Рисунок
-@dataclass
-class Image(Element):
-    image_data: bytes
-    caption: str
-    docx_image_paragraph: Optional[DocxParagraph] = None
-    docx_caption_paragraph: Optional[DocxParagraph] = None
-    text_number_of_element: str
-
-# Таблица
-@dataclass
-class Table(Element):
-    data: List[List[str]]
-    caption: str
-    docx_table: Optional[DocxTable] = None
-    docx_caption_paragraph: Optional[DocxParagraph] = None
-    text_number_of_element: str
-
-# Формула
-@dataclass
-class Formula(Element):
-    formula: str
-    caption: str
-    docx_element: Optional[DocxParagraph] = None
-    docx_caption_paragraph: Optional[DocxParagraph] = None
-    text_number_of_element: str
-
-# Листинг
-@dataclass
-class Listing(Element):
-    text: str
-    caption: str
-    docx_listing_paragraphs: List[DocxParagraph] = field(default_factory=list)
-    docx_caption_paragraph: Optional[DocxParagraph] = None
-    text_number_of_element: str
-
-# Неизвестный элемент
-@dataclass
-class UndefinedElement(Element):
-    content: str
-    docx_element: Optional[object] = None
+from tree_numbering import TreeNumbering
 
 # Вспомогательные функции
 def is_header(paragraph):
@@ -204,7 +139,7 @@ def parse_document(doc_path):
                     stack.pop()
                     current_level -= 1
                 parent = stack[-1]
-                new_header = Header(level, text, [], paragraph)
+                new_header = Header(level, text, [], paragraph, "")
                 parent.append(new_header)
                 stack.append(new_header.children)
                 current_level = level
@@ -243,7 +178,7 @@ def parse_document(doc_path):
                     paragraph_index += 1
                     i += 1
                 parent = stack[-1]
-                parent.append(Image(image_data, caption, paragraph, caption_paragraph))
+                parent.append(Image(image_data, caption, paragraph, caption_paragraph, ""))
                 i += 1
             elif has_formula(paragraph):
                 formula, caption = extract_formula_and_caption(paragraph)
@@ -258,7 +193,7 @@ def parse_document(doc_path):
                         i += 1
                 if formula:
                     parent = stack[-1]
-                    parent.append(Formula(formula, caption, paragraph, caption_paragraph))
+                    parent.append(Formula(formula, caption, paragraph, caption_paragraph, ""))
                 else:
                     parent = stack[-1]
                     parent.append(UndefinedElement(str(paragraph._element), paragraph))
@@ -288,7 +223,7 @@ def parse_document(doc_path):
                     next_paragraph_index += 1
                     j += 1
                 parent = stack[-1]
-                parent.append(Listing(text, caption, listing_paragraphs, caption_paragraph))
+                parent.append(Listing(text, caption, listing_paragraphs, caption_paragraph, ""))
                 i = j
                 paragraph_index = next_paragraph_index
             else:
@@ -305,7 +240,7 @@ def parse_document(doc_path):
                 pending_table_caption = None
                 data = [[cell.text.strip() for cell in row.cells] for row in table.rows]
                 parent = stack[-1]
-                parent.append(Table(data, caption, table, caption_paragraph))
+                parent.append(Table(data, caption, table, caption_paragraph, ""))
             else:
                 parent = stack[-1]
                 parent.append(UndefinedElement(str(element), element))
@@ -317,6 +252,7 @@ def parse_document(doc_path):
 
     return tree
 
+
 # Функция для красивого вывода дерева
 def print_tree(elements, indent=0, prefix=""):
     for i, elem in enumerate(elements):
@@ -326,7 +262,7 @@ def print_tree(elements, indent=0, prefix=""):
         content = ""
         
         if isinstance(elem, Header):
-            content = f"Header (Level {elem.level}): {elem.text[:50]}{'...' if len(elem.text) > 50 else ''}"
+            content = f"Header (Level {elem.level}, {elem.text_number_of_element}): {elem.text[:50]}{'...' if len(elem.text) > 50 else ''}"
         elif isinstance(elem, Paragraph):
             content = f"Paragraph: {elem.text[:50]}{'...' if len(elem.text) > 50 else ''}"
         elif isinstance(elem, ListElement):
@@ -334,19 +270,19 @@ def print_tree(elements, indent=0, prefix=""):
             content = f"List ({elem.list_type}, {len(elem.items)} items): {first_item}"
         elif isinstance(elem, Image):
             image_size = f"{len(elem.image_data)} bytes" if elem.image_data else "No data"
-            content = f"Image: {elem.caption[:44] if elem.caption else 'No caption'} ({image_size})"
+            content = f"Image ({elem.text_number_of_element}): {elem.caption[:44] if elem.caption else 'No caption'} ({image_size})"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Table):
             first_cell = elem.data[0][0][:41] if elem.data and elem.data[0] else 'No data'
-            content = f"Table ({len(elem.data)} rows): {elem.caption[:35] if elem.caption else 'No caption'}, {first_cell}"
+            content = f"Table ({elem.text_number_of_element}, {len(elem.data)} rows): {elem.caption[:35] if elem.caption else 'No caption'}, {first_cell}"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Formula):
             formula_preview = elem.formula[:41] if elem.formula else 'No formula'
-            content = f"Formula: {elem.caption[:35] if elem.caption else 'No caption'}, {formula_preview}"
+            content = f"Formula ({elem.text_number_of_element}): {elem.caption[:35] if elem.caption else 'No caption'}, {formula_preview}"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Listing):
             listing_preview = elem.text[:41] if elem.text else 'No text'
-            content = f"Listing: {elem.caption[:35] if elem.caption else 'No caption'}, {listing_preview}"
+            content = f"Listing ({elem.text_number_of_element}): {elem.caption[:35] if elem.caption else 'No caption'}, {listing_preview}"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, UndefinedElement):
             content = f"Undefined: {elem.content[:50]}{'...' if len(elem.content) > 50 else ''}"
@@ -361,5 +297,7 @@ def print_tree(elements, indent=0, prefix=""):
 if __name__ == "__main__":
     doc_path = "example.docx"
     elements_tree = parse_document(doc_path)
+    numberer = TreeNumbering(elements_tree)
+    numberer.assign_numbers()
     print("Document Structure:")
     print_tree(elements_tree)
