@@ -18,6 +18,7 @@ class Header(Element):
     text: str
     children: List['Element'] = field(default_factory=list)
     docx_element: Optional[DocxParagraph] = None
+    text_number_of_element: str
 
 # Параграф
 @dataclass
@@ -39,6 +40,7 @@ class Image(Element):
     caption: str
     docx_image_paragraph: Optional[DocxParagraph] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None
+    text_number_of_element: str
 
 # Таблица
 @dataclass
@@ -47,6 +49,7 @@ class Table(Element):
     caption: str
     docx_table: Optional[DocxTable] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None
+    text_number_of_element: str
 
 # Формула
 @dataclass
@@ -55,6 +58,7 @@ class Formula(Element):
     caption: str
     docx_element: Optional[DocxParagraph] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None
+    text_number_of_element: str
 
 # Листинг
 @dataclass
@@ -63,6 +67,7 @@ class Listing(Element):
     caption: str
     docx_listing_paragraphs: List[DocxParagraph] = field(default_factory=list)
     docx_caption_paragraph: Optional[DocxParagraph] = None
+    text_number_of_element: str
 
 # Неизвестный элемент
 @dataclass
@@ -325,15 +330,24 @@ def print_tree(elements, indent=0, prefix=""):
         elif isinstance(elem, Paragraph):
             content = f"Paragraph: {elem.text[:50]}{'...' if len(elem.text) > 50 else ''}"
         elif isinstance(elem, ListElement):
-            content = f"List ({elem.list_type}): {len(elem.items)} items"
+            first_item = elem.items[0][:47] + '...' if len(elem.items) > 0 and len(elem.items[0]) > 47 else elem.items[0] if len(elem.items) > 0 else 'No items'
+            content = f"List ({elem.list_type}, {len(elem.items)} items): {first_item}"
         elif isinstance(elem, Image):
-            content = f"Image: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
+            image_size = f"{len(elem.image_data)} bytes" if elem.image_data else "No data"
+            content = f"Image: {elem.caption[:44] if elem.caption else 'No caption'} ({image_size})"
+            content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Table):
-            content = f"Table: {len(elem.data)} rows, {elem.caption[:50] if elem.caption else 'No caption'}{'...' if len(elem.caption) and len(elem.caption) > 50 else ''}"
+            first_cell = elem.data[0][0][:41] if elem.data and elem.data[0] else 'No data'
+            content = f"Table ({len(elem.data)} rows): {elem.caption[:35] if elem.caption else 'No caption'}, {first_cell}"
+            content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Formula):
-            content = f"Formula: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
+            formula_preview = elem.formula[:41] if elem.formula else 'No formula'
+            content = f"Formula: {elem.caption[:35] if elem.caption else 'No caption'}, {formula_preview}"
+            content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Listing):
-            content = f"Listing: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if len(elem.caption) and len(elem.caption) > 50 else ''}"
+            listing_preview = elem.text[:41] if elem.text else 'No text'
+            content = f"Listing: {elem.caption[:35] if elem.caption else 'No caption'}, {listing_preview}"
+            content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, UndefinedElement):
             content = f"Undefined: {elem.content[:50]}{'...' if len(elem.content) > 50 else ''}"
         
