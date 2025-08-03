@@ -4,8 +4,7 @@ from typing import List, Optional
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.table import Table as DocxTable
-from docx.oxml.ns import qn
-from docx.oxml.ns import nsmap  # Добавляем импорт nsmap
+from docx.oxml.ns import qn, nsmap
 
 # Базовый класс для элементов (без полей)
 class Element:
@@ -78,10 +77,21 @@ def get_header_level(paragraph):
     return int(paragraph.style.name.split()[1]) if paragraph.style.name.startswith('Heading') else 1
 
 def is_list_item(paragraph):
-    return paragraph.style.name in ['List Bullet', 'List Number']
-
+    if paragraph.style is None:
+        return False
+    style_name = paragraph.style.name.lower()
+    return 'list' in style_name or 'bullet' in style_name or 'number' in style_name
 def get_list_type(paragraph):
-    return 'unordered' if paragraph.style.name == 'List Bullet' else 'ordered'
+    # Упрощенная проверка типа списка по стилю
+    if paragraph.style is None:
+        return 'unordered'
+    
+    style_name = paragraph.style.name.lower()
+    if 'bullet' in style_name:
+        return 'unordered'
+    elif 'number' in style_name:
+        return 'ordered'
+    return 'unordered'  # По умолчанию
 
 def is_table_caption(paragraph):
     text = paragraph.text.strip()
@@ -99,24 +109,20 @@ def is_listing_caption(paragraph):
     return bool(re.fullmatch(pattern, text))
 
 def has_image(paragraph):
-    # Проверяем наличие изображения через runs или inline shapes
     has_pic = any(run.element.tag.endswith('pic') for run in paragraph.runs)
-    has_inline = paragraph._element.xpath('.//wp:inline')
-    # print(f"Checking paragraph for image: has_pic={has_pic}, has_inline={has_inline}")
+    has_inline = paragraph._element.findall('.//wp:inline', namespaces=nsmap)
+    # print(f"Checking paragraph for image: has_pic={has_pic}, has_inline={len(has_inline) > 0}")
     return has_pic or has_inline
 
 def extract_image(paragraph):
-    # Удаляем явное определение namespaces, используем nsmap
     for run in paragraph.runs:
         if run.element.tag.endswith('pic'):
-            blip = run.element.find('.//a:blip', namespaces=nsmap)  # Используем nsmap
+            blip = run.element.find('.//a:blip', namespaces=nsmap)
             if blip is not None:
                 rId = blip.get(qn('r:embed'))
                 if rId and rId in paragraph.part.related_parts:
                     image_part = paragraph.part.related_parts[rId]
                     return image_part.blob
-
-    # Исправляем вызов xpath -> findall с nsmap
     for inline in paragraph._element.findall('.//wp:inline', namespaces=nsmap):
         blip = inline.find('.//a:blip', namespaces=nsmap)
         if blip is not None:
@@ -124,7 +130,6 @@ def extract_image(paragraph):
             if rId and rId in paragraph.part.related_parts:
                 image_part = paragraph.part.related_parts[rId]
                 return image_part.blob
-                
     return b''
 
 def has_formula(paragraph):
@@ -169,7 +174,10 @@ def parse_document(doc_path):
             paragraph_index += 1
             if is_header(paragraph):
                 level = get_header_level(paragraph)
-                text = paragraph.text
+                text = paragraph.text.strip()
+                if not text:  # Пропускаем пустые заголовки
+                    i += 1
+                    continue
                 while len(stack) > 1 and current_level >= level:
                     stack.pop()
                     current_level -= 1
@@ -181,7 +189,7 @@ def parse_document(doc_path):
                 i += 1
             elif is_list_item(paragraph):
                 list_type = get_list_type(paragraph)
-                list_items = [paragraph.text]
+                list_items = [paragraph.text.strip() or "(empty)"]
                 list_paragraphs = [paragraph]
                 j = i + 1
                 next_paragraph_index = paragraph_index
@@ -189,7 +197,8 @@ def parse_document(doc_path):
                        next_paragraph_index < len(doc.paragraphs) and
                        is_list_item(doc.paragraphs[next_paragraph_index]) and 
                        get_list_type(doc.paragraphs[next_paragraph_index]) == list_type):
-                    list_items.append(doc.paragraphs[next_paragraph_index].text)
+                    next_text = doc.paragraphs[next_paragraph_index].text.strip()
+                    list_items.append(next_text or "(empty)")
                     list_paragraphs.append(doc.paragraphs[next_paragraph_index])
                     next_paragraph_index += 1
                     j += 1
@@ -198,7 +207,7 @@ def parse_document(doc_path):
                 i = j
                 paragraph_index = next_paragraph_index
             elif is_table_caption(paragraph):
-                pending_table_caption = (paragraph.text, paragraph)
+                pending_table_caption = (paragraph.text.strip(), paragraph)
                 i += 1
             elif has_image(paragraph):
                 image_data = extract_image(paragraph)
@@ -207,7 +216,7 @@ def parse_document(doc_path):
                 if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
                     paragraph_index < len(doc.paragraphs) and
                     is_image_caption(doc.paragraphs[paragraph_index])):
-                    caption = doc.paragraphs[paragraph_index].text
+                    caption = doc.paragraphs[paragraph_index].text.strip()
                     caption_paragraph = doc.paragraphs[paragraph_index]
                     paragraph_index += 1
                     i += 1
@@ -221,13 +230,13 @@ def parse_document(doc_path):
                     parent.append(Formula(formula, caption, paragraph, None))
                 i += 1
             elif is_listing(paragraph):
-                text = paragraph.text
+                text = paragraph.text.strip()
                 caption = None
                 caption_paragraph = None
                 if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
                     paragraph_index < len(doc.paragraphs) and
                     is_listing_caption(doc.paragraphs[paragraph_index])):
-                    caption = doc.paragraphs[paragraph_index].text
+                    caption = doc.paragraphs[paragraph_index].text.strip()
                     caption_paragraph = doc.paragraphs[paragraph_index]
                     paragraph_index += 1
                     i += 1
@@ -235,8 +244,10 @@ def parse_document(doc_path):
                 parent.append(Listing(text, caption, paragraph, caption_paragraph))
                 i += 1
             else:
-                parent = stack[-1]
-                parent.append(Paragraph(paragraph.text, paragraph))
+                text = paragraph.text.strip()
+                if text:  # Пропускаем пустые параграфы
+                    parent = stack[-1]
+                    parent.append(Paragraph(text, paragraph))
                 i += 1
         elif element.tag.endswith('tbl'):
             if table_index < len(doc.tables):
@@ -244,7 +255,7 @@ def parse_document(doc_path):
                 table_index += 1
                 caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
                 pending_table_caption = None
-                data = [[cell.text for cell in row.cells] for row in table.rows]
+                data = [[cell.text.strip() for cell in row.cells] for row in table.rows]
                 parent = stack[-1]
                 parent.append(Table(data, caption, table, caption_paragraph))
             else:
