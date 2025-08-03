@@ -110,7 +110,7 @@ def is_listing_caption(paragraph):
 
 def is_formula_caption(paragraph):
     text = paragraph.text.strip()
-    pattern = r'^Формула \d+\.\d+ – .+$'
+    pattern = r'^\(\d+\.\d+\)$'
     return bool(re.fullmatch(pattern, text))
 
 def has_image(paragraph):
@@ -143,7 +143,6 @@ def has_formula(paragraph):
     # print(f"Checking paragraph for formula: has_omath={len(has_omath) > 0}, has_omathpara={len(has_omathpara) > 0}")
     return has_omath or has_omathpara
 
-
 def extract_formula_and_caption(paragraph):
     formula_xml = []
     omath = paragraph._element.findall('.//m:oMath', namespaces=nsmap)
@@ -151,7 +150,13 @@ def extract_formula_and_caption(paragraph):
     for elem in omath + omathpara:
         formula_xml.append(etree.tostring(elem, encoding='unicode'))
     formula = ''.join(formula_xml)
-    return formula, None  # Caption will be handled in parse_document
+    caption = None
+    text = paragraph.text.strip()
+    caption_match = re.search(r'\(\d+\.\d+\)', text)
+    if caption_match:
+        caption = caption_match.group(0)
+    # print(f"Extracting formula: formula_present={bool(formula)}, caption={caption}")
+    return formula, caption
 
 def is_listing(paragraph):
     return paragraph.style.name == 'Listing'
@@ -230,16 +235,16 @@ def parse_document(doc_path):
                 parent.append(Image(image_data, caption, paragraph, caption_paragraph))
                 i += 1
             elif has_formula(paragraph):
-                formula, _ = extract_formula_and_caption(paragraph)
-                caption = None
+                formula, caption = extract_formula_and_caption(paragraph)
                 caption_paragraph = None
-                if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
-                    paragraph_index < len(doc.paragraphs) and
-                    is_formula_caption(doc.paragraphs[paragraph_index])):
-                    caption = doc.paragraphs[paragraph_index].text.strip()
-                    caption_paragraph = doc.paragraphs[paragraph_index]
-                    paragraph_index += 1
-                    i += 1
+                if not caption:  # Check next paragraph only if no caption in current
+                    if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
+                        paragraph_index < len(doc.paragraphs) and
+                        is_formula_caption(doc.paragraphs[paragraph_index])):
+                        caption = doc.paragraphs[paragraph_index].text.strip()
+                        caption_paragraph = doc.paragraphs[paragraph_index]
+                        paragraph_index += 1
+                        i += 1
                 if formula:
                     parent = stack[-1]
                     parent.append(Formula(formula, caption, paragraph, caption_paragraph))
@@ -304,7 +309,7 @@ def print_tree(elements, indent=0, prefix=""):
         elif isinstance(elem, Image):
             content = f"Image: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
         elif isinstance(elem, Table):
-            content = f"Table: {len(elem.data)} rows, {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
+            content = f"Table: {len(elem.data)} rows, {elem.caption[:50] if elem.caption else 'No caption'}{'...' if len(elem.caption) and len(elem.caption) > 50 else ''}"
         elif isinstance(elem, Formula):
             content = f"Formula: {elem.caption[:50] if elem.caption else 'No caption'}{'...' if elem.caption and len(elem.caption) > 50 else ''}"
         elif isinstance(elem, Listing):
