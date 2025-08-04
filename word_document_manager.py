@@ -2,12 +2,38 @@ from typing import List, Optional
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.ns import qn
+from docx.enum.style import WD_STYLE_TYPE
 from elements import Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
 from tree_numbering import TreeNumbering
+from io import BytesIO
 
 class StyleManager:
     def __init__(self, doc: Document):
         self.doc = doc
+        self._ensure_styles()
+
+    def _ensure_styles(self):
+        """Ensures required styles exist in the document."""
+        styles = self.doc.styles
+        style_definitions = [
+            ("Caption", WD_STYLE_TYPE.PARAGRAPH, "Caption", {"font_size": 9, "italic": True}),
+            ("Listing", WD_STYLE_TYPE.PARAGRAPH, "Normal", {"font_name": "Courier New", "font_size": 10}),
+            ("List Bullet", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard unordered list style
+            ("List Number", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard ordered list style
+        ]
+
+        for style_name, style_type, base_style, properties in style_definitions:
+            if style_name not in styles:
+                style = styles.add_style(style_name, style_type)
+                if base_style and base_style in styles:
+                    style.base_style = styles[base_style]
+                for prop, value in properties.items():
+                    if prop == "font_size":
+                        style.font.size = int(value * 12700)  # Convert points to EMU (1 pt = 12700 EMU)
+                    elif prop == "font_name":
+                        style.font.name = value
+                    elif prop == "italic":
+                        style.font.italic = value
 
     def apply_header_style(self, header: Header):
         if header.docx_element:
@@ -42,8 +68,9 @@ class StyleManager:
             paragraph.docx_element.style = "Normal"
 
     def apply_list_style(self, list_element: ListElement):
+        style_name = "List Bullet" if list_element.list_type == "unordered" else "List Number"
         for para in list_element.docx_elements:
-            para.style = f"List {list_element.list_type.capitalize()}"
+            para.style = style_name
 
 class WordDocumentManager:
     def __init__(self, doc_path: str):
@@ -68,7 +95,7 @@ class WordDocumentManager:
         self.numberer.assign_numbers()
         self._update_caption(element)
         self._sync_element_to_doc(element, parent, after)
-        self._apply_styles(element)
+        # self._apply_styles(element)
 
     def remove_element(self, element: Element):
         """Удаляет элемент из дерева и документа."""
@@ -86,20 +113,40 @@ class WordDocumentManager:
 
     def _update_caption(self, element: Element):
         """Обновляет подпись элемента с учетом номера."""
-        if isinstance(element, (Image, Table, Listing)):
-            element.caption = f"{element.__class__.__name__.capitalize()} {element.text_number_of_element} – {element.caption or 'Описание'}"
+        if isinstance(element, Image):
+            element.caption = f"Рисунок {element.text_number_of_element} – {element.caption or 'Описание'}"
+        elif isinstance(element, Table):
+            element.caption = f"Таблица {element.text_number_of_element} – {element.caption or 'Описание'}"
+        elif isinstance(element, Listing):
+            element.caption = f"Листинг {element.text_number_of_element} – {element.caption or 'Описание'}"
         elif isinstance(element, Formula):
             element.caption = f"({element.text_number_of_element})"
 
     def _sync_element_to_doc(self, element: Element, parent: Optional[Element], after: Optional[Element]):
         """Синхронизирует отдельный элемент с документом."""
-        if after and after.docx_element:
-            insert_position = after.docx_element._element
+        # Определяем позицию вставки
+        insert_position = None
+        if after:
+            if hasattr(after, 'docx_element') and after.docx_element:
+                insert_position = after.docx_element._element
+            elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
+                insert_position = after.docx_caption_paragraph._element
+            elif hasattr(after, 'docx_table') and after.docx_table:
+                insert_position = after.docx_table._element
         elif parent and isinstance(parent, Header) and parent.docx_element:
             insert_position = parent.docx_element._element
-        else:
-            insert_position = None
+            # Находим последний дочерний элемент, чтобы вставить после него
+            for child in parent.children:
+                if child == element:
+                    break
+                if hasattr(child, 'docx_element') and child.docx_element:
+                    insert_position = child.docx_element._element
+                elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
+                    insert_position = child.docx_caption_paragraph._element
+                elif hasattr(child, 'docx_table') and child.docx_table:
+                    insert_position = child.docx_table._element
 
+        # Добавляем элемент в документ
         if isinstance(element, Header):
             p = self.doc.add_heading(element.text, level=element.level)
             element.docx_element = p
@@ -111,8 +158,16 @@ class WordDocumentManager:
         elif isinstance(element, Image):
             element.docx_image_paragraph = self.doc.add_paragraph()
             run = element.docx_image_paragraph.add_run()
-            run.add_picture(BytesIO(element.image_data))
-            element.docx_caption_paragraph = self.doc.add_parasagraph(element.caption)
+            try:
+                run.add_picture(BytesIO(element.image_data))
+            except:
+                # Заглушка: создаем временное изображение
+                from PIL import Image as PILImage
+                img = PILImage.new('RGB', (100, 100), color='gray')
+                img_byte_arr = BytesIO()
+                img.save(img_byte_arr, format='PNG')
+                run.add_picture(BytesIO(img_byte_arr.getvalue()))
+            element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
         elif isinstance(element, Table):
             element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
             element.docx_table = self.doc.add_table(rows=len(element.data), cols=len(element.data[0]))
@@ -121,17 +176,39 @@ class WordDocumentManager:
                     element.docx_table.rows[i].cells[j].text = cell
         elif isinstance(element, Formula):
             element.docx_element = self.doc.add_paragraph()
-            run = element.docx_element.add_run(element.formula)
+            run = element.docx_element.add_run()
             run._element.append(self._create_omath_element(element.formula))
-            element.docx_caption_paragraph = element.docx_element  # Caption справа в том же параграфе
-            element.docx_element.add_run(f" {element.caption}")
+            run.add_run(f" {element.caption}")
+            element.docx_caption_paragraph = element.docx_element
         elif isinstance(element, Listing):
             element.docx_listing_paragraphs = [self.doc.add_paragraph(line) for line in element.text.split('\n')]
             element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
 
-        # Перемещаем элемент в нужную позицию, если есть after или parent
-        if insert_position and element.docx_element:
-            self.doc._body._element.insert(insert_position.getnext(), element.docx_element._element)
+        # Перемещаем элемент в нужную позицию
+        main_element = None
+        if hasattr(element, 'docx_element') and element.docx_element:
+            main_element = element.docx_element._element
+        elif hasattr(element, 'docx_image_paragraph') and element.docx_image_paragraph:
+            main_element = element.docx_image_paragraph._element
+        elif hasattr(element, 'docx_table') and element.docx_table:
+            main_element = element.docx_table._element
+
+        if insert_position is not None and main_element is not None:
+            # Вставляем после insert_position
+            parent_element = insert_position.getparent()
+            insert_index = parent_element.index(insert_position) + 1
+            parent_element.insert(insert_index, main_element)
+        if isinstance(element, Table) and element.docx_caption_paragraph:
+            # Подпись таблицы перед таблицей
+            parent_element = element.docx_table._element.getparent()
+            table_index = parent_element.index(element.docx_table._element)
+            parent_element.insert(table_index, element.docx_caption_paragraph._element)
+        elif isinstance(element, (Image, Listing)) and element.docx_caption_paragraph:
+            # Подпись изображения и листинга после основного элемента
+            main_element = element.docx_image_paragraph._element if isinstance(element, Image) else element.docx_listing_paragraphs[-1]._element
+            parent_element = main_element.getparent()
+            main_index = parent_element.index(main_element) + 1
+            parent_element.insert(main_index, element.docx_caption_paragraph._element)
 
     def _remove_element_from_doc(self, element: Element):
         """Удаляет элемент из документа."""
@@ -145,10 +222,10 @@ class WordDocumentManager:
             if element.docx_caption_paragraph:
                 element.docx_caption_paragraph._element.getparent().remove(element.docx_caption_paragraph._element)
         elif isinstance(element, Table):
-            if element.docx_table:
-                element.docx_table._element.getparent().remove(element.docx_table._element)
             if element.docx_caption_paragraph:
                 element.docx_caption_paragraph._element.getparent().remove(element.docx_caption_paragraph._element)
+            if element.docx_table:
+                element.docx_table._element.getparent().remove(element.docx_table._element)
         elif isinstance(element, Formula) and element.docx_element:
             element.docx_element._element.getparent().remove(element.docx_element._element)
         elif isinstance(element, Listing):
@@ -200,6 +277,7 @@ class WordDocumentManager:
 # Пример использования
 if __name__ == "__main__":
     from io import BytesIO
+    from PIL import Image as PILImage
     doc_manager = WordDocumentManager("example.docx")
     doc_manager.load_document("example.docx")
 
@@ -207,11 +285,19 @@ if __name__ == "__main__":
     new_header = Header(level=1, text="Новый заголовок", children=[])
     doc_manager.add_element(None, new_header)
 
+    # Создаем тестовое изображение
+    img = PILImage.new('RGB', (100, 100), color='gray')
+    img_byte_arr = BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    image_data = img_byte_arr.getvalue()
+
     # Добавление изображения под заголовок
-    new_image = Image(image_data=b"image_data", caption="Новое изображение")
+    new_image = Image(image_data=image_data, caption="Новое изображение")
+    new_imagdasde = Paragraph('dasdasd',None)
     doc_manager.add_element(new_header, new_image)
+    doc_manager.add_element(new_header, new_imagdasde)
 
     # Удаление изображения
-    doc_manager.remove_element(new_image)
+    # doc_manager.remove_element(new_image)
 
     doc_manager.save_document()
