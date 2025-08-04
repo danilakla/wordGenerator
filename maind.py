@@ -301,3 +301,34 @@ if __name__ == "__main__":
     numberer.assign_numbers()
     print("Document Structure:")
     print_tree(elements_tree)
+    existing_image = elements_tree[1].children[3].children[2]  # "Рисунок 3.2"
+    new_image = Image(b'image_data', "New image caption", None, None, "")
+    pa = Paragraph(b'image_data test 32', None)
+    numberer.add_after(existing_image, pa)
+    numberer.add_after(pa, new_image)
+    new_header = Header(level=1, text="1", children=[])
+    new_header1 = Header(level=1, text="2", children=[])
+    new_header2 = Header(level=1, text="3", children=[])
+    numberer.add_top_level_header(new_header)  # App
+    numberer.add_top_level_header(new_header1)  # App
+    after_header = elements_tree[0]  # An existing top-level Header
+    numberer.add_top_level_header(new_header2, after_header=new_header)
+    numberer = TreeNumbering(elements_tree)
+
+   
+    pda = Paragraph(b'image_data test 32', None)
+    new_imagdse = Image(b'image_data', "New image caption", None, None, "")
+
+    numberer.add_after(new_header2, pda)
+    numberer.add_after(new_header2, new_imagdse)
+    new_headeriner = Header(level=2, text="dsa1", children=[])
+    new_headeriner_one = Header(level=3, text="dsa1", children=[])
+
+    numberer.add_nested_header(new_header2,new_headeriner)
+    numberer.add_nested_header(new_headeriner,new_headeriner_one)
+    new_imagdseds = Image(b'image_data', "New image caption", None, None, "")
+    numberer.add_after(new_headeriner,new_imagdseds)
+    new_headerdasd = Header(level=1, text="new", children=[])
+    numberer.add_top_level_header(new_headerdasd,new_header)  # App
+
+    print_tree(elements_tree)
