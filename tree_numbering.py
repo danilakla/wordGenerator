@@ -107,7 +107,7 @@ class TreeNumbering:
             raise ValueError("Existing element not found in the tree")
     def add_child_to_header(self, parent_header: Header, new_element: Element):
         """Добавляет новый элемент как дочерний для указанного заголовка и обновляет нумерацию при необходимости."""
-        parent_header.children.append(new_element)
+        parent_header.children.insert(0,new_element)
         if isinstance(new_element, (Header, Image, Table, Formula, Listing)):
             self.assign_numbers()
 

@@ -84,6 +84,7 @@ class WordDocumentManager:
         """Добавляет элемент в дерево и документ."""
         if isinstance(element, Header):
             if parent is None:
+
                 self.numberer.add_top_level_header(element, after_header=after)
             else:
                 self.numberer.add_nested_header(parent, element, after_child=after)
@@ -125,6 +126,7 @@ class WordDocumentManager:
     def _sync_element_to_doc(self, element: Element, parent: Optional[Element], after: Optional[Element]):
         """Синхронизирует отдельный элемент с документом."""
         # Определяем позицию вставки
+        
         insert_position = None
         if after:
             if hasattr(after, 'docx_element') and after.docx_element:
@@ -294,8 +296,24 @@ if __name__ == "__main__":
     # Добавление изображения под заголовок
     new_image = Image(image_data=image_data, caption="Новое изображение")
     new_imagdasde = Paragraph('dasdasd',None)
+    new_imagdasdedsa = Paragraph('dasda32132131231sd',None)
+    
     doc_manager.add_element(new_header, new_image)
-    doc_manager.add_element(new_header, new_imagdasde)
+    doc_manager.add_element(new_image, new_imagdasde)
+    doc_manager.add_element(new_image, new_imagdasdedsa)
+    new_header2 = Header(level=2, text="Новый222 заголовок", children=[])
+    doc_manager.add_element(new_header, new_header2)
+    new_imagdasdedsdsa = Paragraph('2020220',None)
+    new_imagdasdedsdsa32 = Paragraph('2020220323232',None)
+    doc_manager.add_element(new_header2, new_imagdasdedsdsa)
+    doc_manager.add_element(new_imagdasdedsdsa, new_imagdasdedsdsa32)
+    new_image1 = Image(image_data=image_data, caption="Новdsdasdое изображение")
+    doc_manager.add_element(new_header, new_image1)
+    
+    new_header3 = Header(level=2, text="3333 заголовок", children=[])
+    doc_manager.add_element(new_header, new_header3)
+    new_imagdasdedsds321a = Paragraph('2020220',None)
+    doc_manager.add_element(new_header3, new_imagdasdedsds321a)
 
     # Удаление изображения
     # doc_manager.remove_element(new_image)
