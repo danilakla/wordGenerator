@@ -295,7 +295,7 @@ def print_tree(elements, indent=0, prefix=""):
 
 # Пример использования
 if __name__ == "__main__":
-    doc_path = "example.docx"
+    doc_path = "tst.docx"
     elements_tree = parse_document(doc_path)
     numberer = TreeNumbering(elements_tree)
     numberer.assign_numbers()
@@ -323,7 +323,7 @@ if __name__ == "__main__":
     
     new_header3 = Header(level=2, text="3333 заголовок", children=[])
     numberer.add_nested_header(new_header, new_header3)
-    new_imagdasdedsds321a = Paragraph('2020220',None)
+    new_imagdasdedsds321a = Paragraph('321321321',None)
     numberer.add_after(new_header3, new_imagdasdedsds321a)
     print("Document Structure:")
     print_tree(elements_tree)

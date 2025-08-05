@@ -4,6 +4,7 @@ from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.ns import qn
 from docx.enum.style import WD_STYLE_TYPE
 from elements import Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
+from maind import print_tree
 from tree_numbering import TreeNumbering
 from io import BytesIO
 
@@ -92,6 +93,8 @@ class WordDocumentManager:
             if parent is None:
                 raise ValueError("Non-header elements must have a parent")
             self.numberer.add_after(parent, element)
+            if not isinstance(parent,Header):
+                after=parent
 
         self.numberer.assign_numbers()
         self._update_caption(element)
@@ -122,13 +125,35 @@ class WordDocumentManager:
             element.caption = f"Листинг {element.text_number_of_element} – {element.caption or 'Описание'}"
         elif isinstance(element, Formula):
             element.caption = f"({element.text_number_of_element})"
+    def _get_last_nested_element(self, element):
+        """
+        Рекурсивно находит самый последний элемент в иерархии дочерних элементов.
+        Работает с элементами, которые могут содержать вложенную структуру (например, заголовки).
+        """
+        last_element = None
 
+        # Проверяем сам элемент
+        if hasattr(element, 'docx_element') and element.docx_element:
+            last_element = element.docx_element._element
+        elif hasattr(element, 'docx_caption_paragraph') and element.docx_caption_paragraph:
+            last_element = element.docx_caption_paragraph._element
+        elif hasattr(element, 'docx_table') and element.docx_table:
+            last_element = element.docx_table._element
+
+        # Если у элемента есть дети, рекурсивно проверяем их
+        if hasattr(element, 'children') and element.children:
+            for child in element.children:
+                child_last = self._get_last_nested_element(child)
+                if child_last is not None:
+                    last_element = child_last
+
+        return last_element
     def _sync_element_to_doc(self, element: Element, parent: Optional[Element], after: Optional[Element]):
         """Синхронизирует отдельный элемент с документом."""
         # Определяем позицию вставки
         
         insert_position = None
-        if after:
+        if after and not isinstance(element,Header):
             if hasattr(after, 'docx_element') and after.docx_element:
                 insert_position = after.docx_element._element
             elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
@@ -137,9 +162,11 @@ class WordDocumentManager:
                 insert_position = after.docx_table._element
         elif parent and isinstance(parent, Header) and parent.docx_element:
             insert_position = parent.docx_element._element
-            # Находим последний дочерний элемент, чтобы вставить после него
             for child in parent.children:
+                
                 if child == element:
+                    if  isinstance(parent.children[len(parent.children)-2],Header):
+                       insert_position = self._get_last_nested_element(parent.children[len(parent.children)-2])
                     break
                 if hasattr(child, 'docx_element') and child.docx_element:
                     insert_position = child.docx_element._element
@@ -147,7 +174,7 @@ class WordDocumentManager:
                     insert_position = child.docx_caption_paragraph._element
                 elif hasattr(child, 'docx_table') and child.docx_table:
                     insert_position = child.docx_table._element
-
+        
         # Добавляем элемент в документ
         if isinstance(element, Header):
             p = self.doc.add_heading(element.text, level=element.level)
@@ -280,8 +307,8 @@ class WordDocumentManager:
 if __name__ == "__main__":
     from io import BytesIO
     from PIL import Image as PILImage
-    doc_manager = WordDocumentManager("example.docx")
-    doc_manager.load_document("example.docx")
+    doc_manager = WordDocumentManager("tst.docx")
+    doc_manager.load_document("tst.docx")
 
     # Добавление нового заголовка
     new_header = Header(level=1, text="Новый заголовок", children=[])
@@ -312,7 +339,7 @@ if __name__ == "__main__":
     
     new_header3 = Header(level=2, text="3333 заголовок", children=[])
     doc_manager.add_element(new_header, new_header3)
-    new_imagdasdedsds321a = Paragraph('2020220',None)
+    new_imagdasdedsds321a = Paragraph('321321321',None)
     doc_manager.add_element(new_header3, new_imagdasdedsds321a)
 
     # Удаление изображения
