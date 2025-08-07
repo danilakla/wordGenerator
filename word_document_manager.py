@@ -124,12 +124,13 @@ class WordDocumentManager:
         last_element = None
 
         # Проверяем сам элемент
-        if hasattr(element, 'docx_element') and element.docx_element:
-            last_element = element.docx_element._element
+        
+        if hasattr(element, 'docx_table') and element.docx_table:
+            last_element = element.docx_table._element
         elif hasattr(element, 'docx_caption_paragraph') and element.docx_caption_paragraph:
             last_element = element.docx_caption_paragraph._element
-        elif hasattr(element, 'docx_table') and element.docx_table:
-            last_element = element.docx_table._element
+        elif hasattr(element, 'docx_element') and element.docx_element:
+            last_element = element.docx_element._element
 
         # Если у элемента есть дети, рекурсивно проверяем их
         if hasattr(element, 'children') and element.children:
@@ -145,12 +146,13 @@ class WordDocumentManager:
         
         insert_position = None
         if after and not isinstance(element,Header):
-            if hasattr(after, 'docx_element') and after.docx_element:
-                insert_position = after.docx_element._element
+            
+            if hasattr(after, 'docx_table') and after.docx_table:
+                insert_position = after.docx_table._element
             elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
                 insert_position = after.docx_caption_paragraph._element
-            elif hasattr(after, 'docx_table') and after.docx_table:
-                insert_position = after.docx_table._element
+            elif hasattr(after, 'docx_element') and after.docx_element:
+                insert_position = after.docx_element._element
         elif parent and isinstance(parent, Header) and parent.docx_element and isinstance(after,Header):
             insert_position = parent.docx_element._element
             for child in parent.children:
@@ -165,12 +167,12 @@ class WordDocumentManager:
                     if  isinstance(parent.children[len(parent.children)-2],Header):
                        insert_position = self._get_last_nested_element(parent.children[len(parent.children)-2])
                     break
-                if hasattr(child, 'docx_element') and child.docx_element:
-                    insert_position = child.docx_element._element
+                if hasattr(child, 'docx_table') and child.docx_table:
+                    insert_position = child.docx_table._element
                 elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
                     insert_position = child.docx_caption_paragraph._element
-                elif hasattr(child, 'docx_table') and child.docx_table:
-                    insert_position = child.docx_table._element
+                elif hasattr(child, 'docx_element') and child.docx_element:
+                    insert_position = child.docx_element._element
         elif isinstance(element, Header) and isinstance(after,Header) and parent is None:
             for child in self.tree:
                 if child == after:
@@ -218,6 +220,7 @@ class WordDocumentManager:
             element.docx_element.add_run("\t")
             element.docx_element.add_run("\t")
             element.docx_element.add_run("\t")
+            element.docx_element.add_run("\t")
             # Add caption run
             caption_run = element.docx_element.add_run(f"{element.caption}")
             caption_run.font.size = int(14 * 12700)  # 9pt
@@ -228,23 +231,49 @@ class WordDocumentManager:
             
             
         elif isinstance(element, Listing):
+            from docx.oxml import OxmlElement
+            from docx.oxml.ns import qn
+        
             element.docx_listing_paragraphs = [self.doc.add_paragraph(line) for line in element.text.split('\n')]
             element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
+            p_bdr = OxmlElement('w:pBdr')  # Создаем элемент границ
+            
+            for paragraph in element.docx_listing_paragraphs :
+                p_pr = paragraph._element.get_or_add_pPr()
+                p_bdr = OxmlElement('w:pBdr')
 
+                for border_name in ['top', 'left', 'bottom', 'right']:
+                    border = OxmlElement(f'w:{border_name}')
+                    border.set(qn('w:val'), 'single')  # Тип линии
+                    border.set(qn('w:sz'), '4')         # Толщина (0.5 pt)
+                    border.set(qn('w:space'), '4')      # Отступ от текста
+                    border.set(qn('w:color'), '000000') # Цвет (#000000)
+                    p_bdr.append(border)
+
+            p_pr.append(p_bdr)
         # Перемещаем элемент в нужную позицию
         main_element = None
-        if hasattr(element, 'docx_element') and element.docx_element:
-            main_element = element.docx_element._element
+        if hasattr(element, 'docx_table') and element.docx_table:
+            main_element = element.docx_table._element
+        elif hasattr(element, 'docx_listing_paragraphs') and element.docx_listing_paragraphs:
+            main_element = [p._element for p in element.docx_listing_paragraphs]
         elif hasattr(element, 'docx_image_paragraph') and element.docx_image_paragraph:
             main_element = element.docx_image_paragraph._element
-        elif hasattr(element, 'docx_table') and element.docx_table:
-            main_element = element.docx_table._element
+        elif hasattr(element, 'docx_elements') and element.docx_elements:
+            main_element = [p._element for p in element.docx_elements]
+        elif hasattr(element, 'docx_element') and element.docx_element:
+            main_element = element.docx_element._element
 
         if insert_position is not None and main_element is not None:
             # Вставляем после insert_position
             parent_element = insert_position.getparent()
             insert_index = parent_element.index(insert_position) + 1
-            parent_element.insert(insert_index, main_element)
+            if isinstance(element,Listing) or isinstance(element,ListElement):
+                for main_elemend in main_element:
+                    parent_element.insert(insert_index, main_elemend)
+                    insert_index += 1
+            else:
+                parent_element.insert(insert_index, main_element)
         if isinstance(element, Table) and element.docx_caption_paragraph:
             # Подпись таблицы перед таблицей
             parent_element = element.docx_table._element.getparent()
@@ -494,8 +523,16 @@ if __name__ == "__main__":
     doc_manager.add_element(new_imagdasdedsds321adass2ds,tab23dase)
     doc_manager.add_element(new_image3d21dd,tab2вы3dase)
     doc_manager.add_element(new_image3d21,tab2вы3dasde)
-
+    test_para = Paragraph('after table?',None)
+    lit2= Listing("code dadkmaskdm dsamk dksamkdasmdksajdaskdjnashdbasd jasnjdnasjkdnasjdnasdnasjkdnsadjasn jdsn adjasdnsaj ndjsak","doksddescriptio of code")    
+    lit3= Listing("logc32131312ode dadkmaskdm dsamk dksamkdasmdksajdaskdjnashdbasd jasnjdnasjkdnasjdnasdnasjkdnsadjasn jdsn adjasdnsaj ndjsak","doksddescriptio of code")    
+    
+    doc_manager.add_element(lit,test_para)
+    doc_manager.add_element(tab23e,lit2)
+    doc_manager.add_element(new_header7,lit3)
+    dod_lits = ListElement(['dal 1',"dal 2","dal 3"],'–')
+    doc_manager.add_element(test_para,dod_lits)
     # Удаление изображения
     # doc_manager.remove_element(new_image)
-
+    print_tree(doc_manager.tree)
     doc_manager.save_document()
