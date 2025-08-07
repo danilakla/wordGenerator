@@ -1,3 +1,4 @@
+
 from typing import List, Optional
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
@@ -97,7 +98,6 @@ class WordDocumentManager:
                 after=parent
 
         self.numberer.assign_numbers()
-        self._update_caption(element)
         self._sync_element_to_doc(element, parent, after)
         # self._apply_styles(element)
 
@@ -115,16 +115,7 @@ class WordDocumentManager:
         self._remove_element_from_doc(element)
         self.numberer.assign_numbers()
 
-    def _update_caption(self, element: Element):
-        """Обновляет подпись элемента с учетом номера."""
-        if isinstance(element, Image):
-            element.caption = f"Рисунок {element.text_number_of_element} – {element.caption or 'Описание'}"
-        elif isinstance(element, Table):
-            element.caption = f"Таблица {element.text_number_of_element} – {element.caption or 'Описание'}"
-        elif isinstance(element, Listing):
-            element.caption = f"Листинг {element.text_number_of_element} – {element.caption or 'Описание'}"
-        elif isinstance(element, Formula):
-            element.caption = f"({element.text_number_of_element})"
+    
     def _get_last_nested_element(self, element):
         """
         Рекурсивно находит самый последний элемент в иерархии дочерних элементов.
@@ -160,6 +151,12 @@ class WordDocumentManager:
                 insert_position = after.docx_caption_paragraph._element
             elif hasattr(after, 'docx_table') and after.docx_table:
                 insert_position = after.docx_table._element
+        elif parent and isinstance(parent, Header) and parent.docx_element and isinstance(after,Header):
+            insert_position = parent.docx_element._element
+            for child in parent.children:
+                if child == after:
+                    insert_position = self._get_last_nested_element(child)
+                    break
         elif parent and isinstance(parent, Header) and parent.docx_element:
             insert_position = parent.docx_element._element
             for child in parent.children:
@@ -174,6 +171,12 @@ class WordDocumentManager:
                     insert_position = child.docx_caption_paragraph._element
                 elif hasattr(child, 'docx_table') and child.docx_table:
                     insert_position = child.docx_table._element
+        elif isinstance(element, Header) and isinstance(after,Header) and parent is None:
+            for child in self.tree:
+                if child == after:
+                    insert_position = self._get_last_nested_element(child)
+                    break
+
         
         # Добавляем элемент в документ
         if isinstance(element, Header):
@@ -204,11 +207,26 @@ class WordDocumentManager:
                 for j, cell in enumerate(row):
                     element.docx_table.rows[i].cells[j].text = cell
         elif isinstance(element, Formula):
+            from docx.enum.text import WD_ALIGN_PARAGRAPH
             element.docx_element = self.doc.add_paragraph()
-            run = element.docx_element.add_run()
-            run._element.append(self._create_omath_element(element.formula))
-            run.add_run(f" {element.caption}")
-            element.docx_caption_paragraph = element.docx_element
+            # Add formula run first (centered)
+            formula_run = element.docx_element.add_run()
+            formula_run._element.append(self._create_omath_element(element.formula))
+            # Add a tab to separate formula and caption
+            element.docx_element.add_run("\t")
+            element.docx_element.add_run("\t")
+            element.docx_element.add_run("\t")
+            element.docx_element.add_run("\t")
+            element.docx_element.add_run("\t")
+            # Add caption run
+            caption_run = element.docx_element.add_run(f"{element.caption}")
+            caption_run.font.size = int(14 * 12700)  # 9pt
+            caption_run.font.italic = True
+            # Right-align the paragraph
+            element.docx_element.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            doc_elements = [element.docx_element._element]
+            
+            
         elif isinstance(element, Listing):
             element.docx_listing_paragraphs = [self.doc.add_paragraph(line) for line in element.text.split('\n')]
             element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
@@ -255,8 +273,9 @@ class WordDocumentManager:
                 element.docx_caption_paragraph._element.getparent().remove(element.docx_caption_paragraph._element)
             if element.docx_table:
                 element.docx_table._element.getparent().remove(element.docx_table._element)
-        elif isinstance(element, Formula) and element.docx_element:
-            element.docx_element._element.getparent().remove(element.docx_element._element)
+        elif isinstance(element, Formula):
+            if element.docx_element:
+                element.docx_element._element.getparent().remove(element.docx_element._element)
         elif isinstance(element, Listing):
             for para in element.docx_listing_paragraphs:
                 para._element.getparent().remove(para._element)
@@ -283,13 +302,100 @@ class WordDocumentManager:
         elif isinstance(element, ListElement):
             self.style_manager.apply_list_style(element)
 
+    # def _create_omath_element(self, formula: str):
+    #     """Создает oMath элемент для формулы (заглушка, требует доработки)."""
+    #     from docx.oxml import OxmlElement
+    #     omath = OxmlElement('m:oMath')
+    #     # Здесь нужно добавить парсинг formula в MathML, если требуется
+    #     return omath
     def _create_omath_element(self, formula: str):
-        """Создает oMath элемент для формулы (заглушка, требует доработки)."""
+        """
+        Creates an oMath element for a mathematical formula.
+        Supports basic mathematical expressions, fractions, exponents, etc.
+        
+        Args:
+            formula: A string representing the mathematical formula (e.g., "E=mc^2")
+            
+        Returns:
+            An OMath XML element ready for insertion into a Word document.
+        """
         from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        
+        def create_run(text):
+            """Helper to create a text run with math formatting."""
+            r = OxmlElement('m:r')
+            t = OxmlElement('m:t')
+            t.text = text
+            r.append(t)
+            return r
+        
+        def create_frac(num, denom):
+            """Creates a fraction element."""
+            frac = OxmlElement('m:f')
+            
+            num_elem = OxmlElement('m:num')
+            num_elem.append(create_run(num))
+            frac.append(num_elem)
+            
+            denom_elem = OxmlElement('m:den')
+            denom_elem.append(create_run(denom))
+            frac.append(denom_elem)
+            
+            return frac
+        
+        def create_superscript(base, sup):
+            """Creates a superscript element."""
+            ssup = OxmlElement('m:sSup')
+            
+            e = OxmlElement('m:e')
+            e.append(create_run(base))
+            ssup.append(e)
+            
+            sup_elem = OxmlElement('m:sup')
+            sup_elem.append(create_run(sup))
+            ssup.append(sup_elem)
+            
+            return ssup
+        
+        def create_subscript(base, sub):
+            """Creates a subscript element."""
+            ssub = OxmlElement('m:sSub')
+            
+            e = OxmlElement('m:e')
+            e.append(create_run(base))
+            ssub.append(e)
+            
+            sub_elem = OxmlElement('m:sub')
+            sub_elem.append(create_run(sub))
+            ssub.append(sub_elem)
+            
+            return ssub
+        
+        # Create the root oMath element
         omath = OxmlElement('m:oMath')
-        # Здесь нужно добавить парсинг formula в MathML, если требуется
+        
+        # Simple parser for basic formulas
+        # This is a very basic implementation - consider using a proper parser
+        # for complex formulas
+        
+        # Handle fractions (a/b)
+        if '/' in formula:
+            num, denom = formula.split('/', 1)
+            omath.append(create_frac(num.strip(), denom.strip()))
+        # Handle exponents (a^b)
+        elif '^' in formula:
+            base, exp = formula.split('^', 1)
+            omath.append(create_superscript(base.strip(), exp.strip()))
+        # Handle subscripts (a_b)
+        elif '_' in formula:
+            base, sub = formula.split('_', 1)
+            omath.append(create_subscript(base.strip(), sub.strip()))
+        else:
+            # Default case - simple formula
+            omath.append(create_run(formula))
+        
         return omath
-
     def load_document(self, doc_path: str):
         """Загружает документ и инициализирует дерево."""
         from maind import parse_document
@@ -338,9 +444,56 @@ if __name__ == "__main__":
     doc_manager.add_element(new_header, new_image1)
     
     new_header3 = Header(level=2, text="3333 заголовок", children=[])
+    
     doc_manager.add_element(new_header, new_header3)
     new_imagdasdedsds321a = Paragraph('321321321',None)
     doc_manager.add_element(new_header3, new_imagdasdedsds321a)
+    new_header4 = Header(level=3, text="хитрый кейс3333 заголовок", children=[])
+    doc_manager.add_element(new_header2,new_header4)
+    new_imagdasdeddassds321a = Paragraph('[bnh эомент]',None)
+    doc_manager.add_element(new_header4,new_imagdasdeddassds321a)
+
+    new_header5 = Header(level=2, text="Ну если и это заголоовк мошны йто просто молчу", children=[])
+    doc_manager.add_element(new_header,new_header5,new_header2)
+    
+    new_imagdasdedsds321adass = Paragraph('pusin',None)
+    new_imagdasdedsds321adass1 = Paragraph('pusin2',None)
+    new_imagdasdedsds321adass2 = Paragraph('pusin3',None)
+    doc_manager.add_element(new_header5,new_imagdasdedsds321adass)
+    doc_manager.add_element(new_imagdasdedsds321adass,new_imagdasdedsds321adass1)
+    doc_manager.add_element(new_imagdasdedsds321adass,new_imagdasdedsds321adass2)
+
+
+    new_header7 = Header(level=1, text="иди сюда заголовок", children=[])
+    doc_manager.add_element(None, new_header7)
+    new_header8 = Header(level=2, text="иди сюда заголовок 2", children=[])
+    doc_manager.add_element(new_header7,new_header8)
+    new_imagdasdedsds321adass2ds = Paragraph('susapusin3',None)
+    doc_manager.add_element(new_header8,new_imagdasdedsds321adass2ds)
+
+    new_header6 = Header(level=1, text="зайде укак я сюайд", children=[])
+    doc_manager.add_element(None,new_header6,new_header)
+
+    new_image3d21 = Image(image_data=image_data, caption="Новое изображение")
+    new_image3d21dd = Image(image_data=image_data, caption="Новое 333изображение")
+
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,new_image3d21)
+    new_header10 = Header(level=1, text="fasafasfafaf укак я сюайд", children=[])
+    doc_manager.add_element(None,new_header10,new_header6)
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,new_image3d21dd)
+    lit= Listing("code dskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmad","descriptio of code")    
+    tab23 = Table([["1","21","3"],["4","5","6"]],'описани таблицы офо')
+    tab23e = Table([["1","32321","3"],["4","3213","6"]],'3213описани таблицы офо')
+    tab23dase = Formula("E=mc^2","dasdas dsa21",None)
+    tab2вы3dase = Formula("E=2332mc^2","d32321asdas dsa21",None)
+    tab2вы3dasde = Formula("E=233d2mc^2","d32321asdas dsa21",None)
+    
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,lit)
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,tab23)
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,tab23e)
+    doc_manager.add_element(new_imagdasdedsds321adass2ds,tab23dase)
+    doc_manager.add_element(new_image3d21dd,tab2вы3dase)
+    doc_manager.add_element(new_image3d21,tab2вы3dasde)
 
     # Удаление изображения
     # doc_manager.remove_element(new_image)

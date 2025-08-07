@@ -325,6 +325,33 @@ if __name__ == "__main__":
     numberer.add_nested_header(new_header, new_header3)
     new_imagdasdedsds321a = Paragraph('321321321',None)
     numberer.add_after(new_header3, new_imagdasdedsds321a)
+    new_header4 = Header(level=3, text="хитрый кейс3333 заголовок", children=[])
+    numberer.add_nested_header(new_header2,new_header4)
+    new_imagdasdeddassds321a = Paragraph('[bnh эомент]',None)
+    numberer.add_after(new_header4,new_imagdasdeddassds321a)
+
+    new_header5 = Header(level=2, text="Ну если и это заголоовк мошны йто просто молчу", children=[])
+    numberer.add_nested_header(new_header,new_header5,new_header2)
+    
+    new_imagdasdedsds321adass = Paragraph('pusin',None)
+    new_imagdasdedsds321adass1 = Paragraph('pusin2',None)
+    new_imagdasdedsds321adass2 = Paragraph('pusin3',None)
+    numberer.add_after(new_header5,new_imagdasdedsds321adass)
+    numberer.add_after(new_imagdasdedsds321adass,new_imagdasdedsds321adass1)
+    numberer.add_after(new_imagdasdedsds321adass,new_imagdasdedsds321adass2)
+
+
+    new_header7 = Header(level=1, text="иди сюда заголовок", children=[])
+    numberer.add_top_level_header(new_header7)
+    new_header8 = Header(level=2, text="иди сюда заголовок 2", children=[])
+    numberer.add_nested_header(new_header7,new_header8)
+    new_imagdasdedsds321adass2ds = Paragraph('susapusin3',None)
+    numberer.add_after(new_header8,new_imagdasdedsds321adass2ds)
+
+    new_header6 = Header(level=1, text="зайде укак я сюайд", children=[])
+    numberer.add_top_level_header(new_header6,new_header)
+
+
     print("Document Structure:")
     print_tree(elements_tree)
   
