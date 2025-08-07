@@ -129,6 +129,8 @@ class WordDocumentManager:
             last_element = element.docx_table._element
         elif hasattr(element, 'docx_caption_paragraph') and element.docx_caption_paragraph:
             last_element = element.docx_caption_paragraph._element
+        elif hasattr(element, 'docx_elements') and element.docx_elements:
+            last_element = element.docx_elements[-1]._element
         elif hasattr(element, 'docx_element') and element.docx_element:
             last_element = element.docx_element._element
 
@@ -151,6 +153,8 @@ class WordDocumentManager:
                 insert_position = after.docx_table._element
             elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
                 insert_position = after.docx_caption_paragraph._element
+            elif hasattr(after, 'docx_elements') and after.docx_elements:
+                insert_position = after.docx_elements[-1]._element
             elif hasattr(after, 'docx_element') and after.docx_element:
                 insert_position = after.docx_element._element
         elif parent and isinstance(parent, Header) and parent.docx_element and isinstance(after,Header):
@@ -171,6 +175,8 @@ class WordDocumentManager:
                     insert_position = child.docx_table._element
                 elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
                     insert_position = child.docx_caption_paragraph._element
+                elif hasattr(child, 'docx_elements') and child.docx_elements:
+                    insert_position = child.docx_elements[-1]._element
                 elif hasattr(child, 'docx_element') and child.docx_element:
                     insert_position = child.docx_element._element
         elif isinstance(element, Header) and isinstance(after,Header) and parent is None:
@@ -530,8 +536,11 @@ if __name__ == "__main__":
     doc_manager.add_element(lit,test_para)
     doc_manager.add_element(tab23e,lit2)
     doc_manager.add_element(new_header7,lit3)
-    dod_lits = ListElement(['dal 1',"dal 2","dal 3"],'–')
+    dod_lits = ListElement(['dal 1;',"dal 2;","dal 3."],'–')
     doc_manager.add_element(test_para,dod_lits)
+    dkjsad2 = Paragraph('afet s2susapusin3',None)
+    doc_manager.add_element(dod_lits,dkjsad2)
+
     # Удаление изображения
     # doc_manager.remove_element(new_image)
     print_tree(doc_manager.tree)

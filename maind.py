@@ -18,10 +18,19 @@ def get_header_level(paragraph):
     return int(paragraph.style.name.split()[1]) if paragraph.style.name.startswith('Heading') else 1
 
 def is_list_item(paragraph):
-    if paragraph.style is None:
-        return False
-    style_name = paragraph.style.name.lower()
-    return 'list' in style_name or 'bullet' in style_name or 'number' in style_name
+    # Check for styled lists first (original functionality)
+    if paragraph.style is not None:
+        style_name = paragraph.style.name.lower()
+        if 'list' in style_name or 'bullet' in style_name or 'number' in style_name:
+            return True
+    
+    # Check for dash-started lists with specific formatting
+    if paragraph.text.strip().startswith('–') and paragraph.text.strip().endswith(';'):        
+        return True
+    if paragraph.text.strip().startswith('–') and paragraph.text.strip().endswith('.'):        
+        return True
+    
+    return False
 
 def get_list_type(paragraph):
     if paragraph.style is None:
@@ -145,24 +154,65 @@ def parse_document(doc_path):
                 current_level = level
                 i += 1
             elif is_list_item(paragraph):
-                list_type = get_list_type(paragraph)
-                list_items = [paragraph.text.strip() or "(empty)"]
-                list_paragraphs = [paragraph]
-                j = i + 1
-                next_paragraph_index = paragraph_index
-                while (j < len(elements) and elements[j].tag.endswith('p') and 
-                       next_paragraph_index < len(doc.paragraphs) and
-                       is_list_item(doc.paragraphs[next_paragraph_index]) and 
-                       get_list_type(doc.paragraphs[next_paragraph_index]) == list_type):
-                    next_text = doc.paragraphs[next_paragraph_index].text.strip()
-                    list_items.append(next_text or "(empty)")
-                    list_paragraphs.append(doc.paragraphs[next_paragraph_index])
-                    next_paragraph_index += 1
-                    j += 1
-                parent = stack[-1]
-                parent.append(ListElement(list_items, list_type, list_paragraphs))
-                i = j
-                paragraph_index = next_paragraph_index
+                if paragraph.style is not None:  # Original styled list handling
+                    list_type = get_list_type(paragraph)
+                    list_items = [paragraph.text.strip() or "(empty)"]
+                    list_paragraphs = [paragraph]
+                    j = i + 1
+                    next_paragraph_index = paragraph_index
+                    while (j < len(elements) and elements[j].tag.endswith('p') and 
+                           next_paragraph_index < len(doc.paragraphs) and
+                           is_list_item(doc.paragraphs[next_paragraph_index]) and 
+                           get_list_type(doc.paragraphs[next_paragraph_index]) == list_type):
+                        next_text = doc.paragraphs[next_paragraph_index].text.strip()
+                        list_items.append(next_text or "(empty)")
+                        list_paragraphs.append(doc.paragraphs[next_paragraph_index])
+                        next_paragraph_index += 1
+                        j += 1
+                    parent = stack[-1]
+                    parent.append(ListElement(list_items, list_type, list_paragraphs))
+                    i = j
+                    paragraph_index = next_paragraph_index
+                else:  # Handle dash-started lists
+                    list_items = []
+                    list_paragraphs = []
+                    current_index = i
+                    current_para_index = paragraph_index
+                    list_complete = False
+
+                    # Collect all consecutive dash-started paragraphs until we find the terminating one
+                    while (current_index < len(elements) and elements[current_index].tag.endswith('p') and
+                           current_para_index < len(doc.paragraphs)):
+                        current_para = doc.paragraphs[current_para_index]
+                        text = current_para.text.strip()
+
+                        if not text.startswith('–'):
+                            break
+
+                        list_items.append(text or "(empty)")
+                        list_paragraphs.append(current_para)
+
+                        # Check if this is the terminating item (ends with .)
+                        if text.endswith('.'):
+                            list_complete = True
+                            break
+
+                        current_index += 1
+                        current_para_index += 1
+
+                    # Only create list if we found proper termination
+                    if list_complete:
+                        parent = stack[-1]
+                        parent.append(ListElement(list_items, "dash", list_paragraphs))
+                        i = current_index + 1
+                        paragraph_index = current_para_index + 1
+                    else:
+                        # If not a complete list, treat as regular paragraphs
+                        parent = stack[-1]
+                        parent.append(Paragraph(paragraph.text, paragraph))
+                        i += 1
+                        paragraph_index += 1
+
             elif is_table_caption(paragraph):
                 pending_table_caption = (paragraph.text.strip(), paragraph)
                 i += 1
@@ -347,10 +397,9 @@ if __name__ == "__main__":
     numberer.add_nested_header(new_header7,new_header8)
     new_imagdasdedsds321adass2ds = Paragraph('susapusin3',None)
     numberer.add_after(new_header8,new_imagdasdedsds321adass2ds)
-
     new_header6 = Header(level=1, text="зайде укак я сюайд", children=[])
     numberer.add_top_level_header(new_header6,new_header)
-
+    
 
     print("Document Structure:")
     print_tree(elements_tree)
