@@ -112,10 +112,135 @@ class WordDocumentManager:
 
         parent_list, index = parent_info
         parent_list.pop(index)
-        self._remove_element_from_doc(element)
         self.numberer.assign_numbers()
+        self._remove_element_from_doc(element)
+    def update_element(self, element: Element, update_element: Element, ):
+        """Update элемент  дерева и документа."""
 
-    
+        self.numberer.update_element_content(element,update_element)
+        self._update_element_word(element)
+
+    def _update_element_word(self, element: Element):
+        if isinstance(element, Header):
+            element.docx_element.text = element.text
+        elif isinstance(element, Paragraph):
+            element.docx_element.text=element.text
+        elif isinstance(element, ListElement):
+        # 1. Удаляем старые параграфы из документа
+            old_paragraphs = element.docx_elements.copy()
+
+            # Очищаем список (но параграфы пока остаются в документе)
+            element.docx_elements.clear()
+
+            # Добавляем новые параграфы после последнего старого параграфа
+            if old_paragraphs:
+                insert_position = old_paragraphs[-1]._element
+                parent_element = insert_position.getparent()
+                insert_index = parent_element.index(insert_position) + 1
+                for item in element.items:
+                    new_paragraph = self.doc.add_paragraph(item)
+                    parent_element.insert(insert_index, new_paragraph._element)
+                    element.docx_elements.append(new_paragraph)
+                    insert_index += 1
+                            
+            for paragraph in old_paragraphs:
+                if paragraph._p is not None:
+                    paragraph._p.getparent().remove(paragraph._p)
+        elif isinstance(element, Image):
+            if element.docx_image_paragraph is not None:
+                # Получаем первый run (где хранится изображение)
+                runs = element.docx_image_paragraph.runs
+                if runs:  # Если run существует
+                    run = runs[0]  # Берём первый run (обычно там картинка)
+                    run.clear()  # Удаляем старое изображение
+                
+                    # Пытаемся добавить новое изображение
+                    try:
+                        run.add_picture(BytesIO(element.image_data))
+                    except Exception as e:
+                        print(f"Ошибка добавления изображения: {e}")
+                        # Создаём заглушку
+                        from PIL import Image as PILImage
+                        img = PILImage.new('RGB', (100, 100), color='gray')
+                        img_byte_arr = BytesIO()
+                        img.save(img_byte_arr, format='PNG')
+                        run.add_picture(BytesIO(img_byte_arr.getvalue()))
+            element.docx_caption_paragraph.text = element.caption
+        elif isinstance(element, Table):
+            # Сохраняем ссылку на старую таблицу
+            old_table = element.docx_table
+            
+            # Создаем новую таблицу
+            new_table = self.doc.add_table(rows=len(element.data), cols=len(element.data[0]))
+            
+            # Заполняем новую таблицу данными
+            for i, row in enumerate(element.data):
+                for j, cell in enumerate(row):
+                    new_table.cell(i, j).text = cell
+            
+            insert_position = old_table._element
+            
+            parent_element = insert_position.getparent()
+            insert_index = parent_element.index(insert_position)+1
+            parent_element.insert(insert_index,new_table._element)
+            if old_table is not None and old_table._tbl is not None:
+                old_table._tbl.getparent().remove(old_table._tbl)            
+            # Обновляем ссылку на таблицу в элементе
+            element.docx_table = new_table
+            element.docx_caption_paragraph.text=element.caption
+            
+        elif isinstance(element, Formula):
+            if element.docx_element is not None and len(element.docx_element.runs) > 0:
+                # Получаем первый Run
+                formula_run = element.docx_element.runs[0]
+                # Очищаем его
+                formula_run._element.clear()
+                # Добавляем новую формулу
+                formula_run._element.append(self._create_omath_element(element.formula))
+            
+            
+        elif isinstance(element, Listing):
+            from docx.oxml import OxmlElement
+            from docx.oxml.ns import qn
+
+            # Сохраняем старые параграфы
+            old_paragraphs = element.docx_listing_paragraphs.copy()
+
+            # Создаем новые параграфы с рамкой
+            new_paragraphs = []
+            for line in element.text.split('\n'):
+                new_paragraph = self.doc.add_paragraph(line)
+
+                # Настраиваем границы
+                p_pr = new_paragraph._element.get_or_add_pPr()
+                p_bdr = OxmlElement('w:pBdr')
+
+                for border_name in ['top', 'left', 'bottom', 'right']:
+                    border = OxmlElement(f'w:{border_name}')
+                    border.set(qn('w:val'), 'single')
+                    border.set(qn('w:sz'), '4')
+                    border.set(qn('w:space'), '4')
+                    border.set(qn('w:color'), '000000')
+                    p_bdr.append(border)
+
+                p_pr.append(p_bdr)
+                new_paragraphs.append(new_paragraph)
+            # Добавляем новые параграфы после последнего старого параграфа
+            if old_paragraphs:
+                insert_position = old_paragraphs[-1]._element
+                parent_element = insert_position.getparent()
+                insert_index = parent_element.index(insert_position) + 1
+                for new_pr in new_paragraphs:
+                    parent_element.insert(insert_index, new_pr._element)
+                    insert_index += 1
+                            
+            for paragraph in old_paragraphs:
+                if paragraph._p is not None:
+                    paragraph._p.getparent().remove(paragraph._p)
+                    
+                    
+            element.docx_listing_paragraphs = new_paragraphs
+            element.docx_caption_paragraph.text = element.caption
     def _get_last_nested_element(self, element):
         """
         Рекурсивно находит самый последний элемент в иерархии дочерних элементов.
@@ -231,6 +356,7 @@ class WordDocumentManager:
             caption_run = element.docx_element.add_run(f"{element.caption}")
             caption_run.font.size = int(14 * 12700)  # 9pt
             caption_run.font.italic = True
+            element.docx_caption_paragraph = caption_run
             # Right-align the paragraph
             element.docx_element.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             doc_elements = [element.docx_element._element]
@@ -291,7 +417,12 @@ class WordDocumentManager:
             parent_element = main_element.getparent()
             main_index = parent_element.index(main_element) + 1
             parent_element.insert(main_index, element.docx_caption_paragraph._element)
-
+    
+    def remove_header(self, element: Element, force: bool = False):
+        """Удаляет заголовок из документа. Если force=True, удаляет заголовок и его дочерние элементы, иначе удаляет только если нет дочерних элементов."""
+        if isinstance(element, Header) and element.docx_element:
+            if force or not element.docx_element._element.getchildren():
+                element.docx_element._element.getparent().remove(element.docx_element._element)
     def _remove_element_from_doc(self, element: Element):
         """Удаляет элемент из документа."""
         if isinstance(element, Header) and element.docx_element:
@@ -540,8 +671,32 @@ if __name__ == "__main__":
     doc_manager.add_element(test_para,dod_lits)
     dkjsad2 = Paragraph('afet s2susapusin3',None)
     doc_manager.add_element(dod_lits,dkjsad2)
-
+    img1 = PILImage.new('RGB', (100, 100), color='red')
+    img_byte_arr1 = BytesIO()
+    img1.save(img_byte_arr1, format='PNG')
+    image_data1 = img_byte_arr1.getvalue()
+    lodsds= ListElement(['первый;','второй;', "третий."],'–')
+    
     # Удаление изображения
-    # doc_manager.remove_element(new_image)
+    doc_manager.remove_element(new_header6)
+    doc_manager.remove_element(lit2)
+    doc_manager.remove_element(tab23dase)
+    doc_manager.remove_element(dod_lits)
+    doc_manager.remove_element(new_image3d21dd)
+    doc_manager.remove_element(tab23e)
+    doc_manager.add_element(lit3,lodsds)
+    doc_manager.update_element(new_header10, Header(1,'проверка го гого'))
+    doc_manager.update_element(new_header4, Header(1,'ну я хитрееее тебя 333проверка го гого'))
+    doc_manager.update_element(dkjsad2, Paragraph("но вот и все par updated"))
+    doc_manager.update_element(lodsds, ListElement(['как-то так;','пися231;','ага.'],'–'))
+    doc_manager.update_element(lodsds, ListElement(['dsadasd','как-то так;','пися231;','ага.'],'–'))
+    doc_manager.update_element (new_image3d21, Image(image_data=image_data1, caption="red one Новое изображение"))
+    doc_manager.update_element (tab23, Table([["1","1"],["2","2"],["3","3"]],"Fracation table"))
+    ds32 = Table([["01","1"],["02","2"],["3","3"]]," n ni niFracation table")
+    doc_manager.add_element(new_header8,ds32)
+    doc_manager.update_element (ds32, Table([["10","10"],["20","20"]],"Fracat32ion table"))
+    doc_manager.update_element(tab2вы3dase,Formula('2+2=10',''))
+    doc_manager.update_element(lit3,Listing(f"poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'capton new one'))
+    doc_manager.update_element(lit,Listing(f"3213123 1321poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnasposo smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'32capton new one'))
     print_tree(doc_manager.tree)
     doc_manager.save_document()

@@ -1,6 +1,7 @@
+import copy
 import re
 from typing import List, Optional
-from elements import Element, Formula, Header, Image, Listing, Table
+from elements import Element, Formula, Header, Image, ListElement, Listing, Paragraph, Table
 
 class TreeNumbering:
     def __init__(self, tree: List[Element]):
@@ -142,7 +143,34 @@ class TreeNumbering:
                 if result is not None:
                     return result
         return None
-
+    def update_element_content(self, element: Element, update_element: Element):
+        """
+        Updates the content or caption of an element in the tree and triggers renumbering if needed.
+        
+        Args:
+            element: The element to update (Header, Paragraph, ListElement, Image, Table, Formula, Listing).
+            new_content: The new content (str for text/caption/formula, List[List[str]] for Table data, List[str] for ListElement items).
+            field: The field to update ('content' for text/data/formula/items, 'caption' for caption).
+        """
+        if isinstance(element, Header):
+            element.text=f"{element.text_number_of_element} {update_element.text}"
+        elif isinstance(element, Paragraph):
+            element.text = update_element.text
+        elif isinstance(element, ListElement):
+            element.items = list(update_element.items)
+        elif isinstance(element, Image):
+            element.caption = f"Рисунок {element.text_number_of_element} – {update_element.caption}"
+            element.image_data =  update_element.image_data
+            
+        elif isinstance(element, Table):
+            element.caption = f"Таблица {element.text_number_of_element} – {update_element.caption}"
+            element.data = copy.deepcopy(update_element.data)
+        elif isinstance(element, Formula):
+            element.formula = update_element.formula
+        elif isinstance(element, Listing):
+            element.caption = f"Листинг {element.text_number_of_element} – {update_element.caption}"
+            element.text =update_element.text 
+            
     def add_after(self, existing_element: Element, new_element: Element):
         """Adds a new element after the specified existing element and updates numbering if necessary."""
         if isinstance(existing_element, (Header)):
