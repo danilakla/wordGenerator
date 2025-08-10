@@ -132,7 +132,30 @@ class TreeNumbering:
         }).copy()
         self.current_top_level = top_level_number
         self._number_tree(subtree)
-
+    def find_parent_element(self,elements: List[Element], target_element: Element) -> Optional[Element]:
+        """
+        Finds the parent element of the target_element in the given list of elements.
+        
+        Args:
+            elements: List of Element objects to search through.
+            target_element: The element whose parent we want to find.
+            
+        Returns:
+            The parent Element if found, None otherwise.
+        """
+        # Iterate through all elements to find the parent
+        for element in elements:
+            # Check if the current element is a Header (the only type that can have children)
+            if isinstance(element, Header):
+                # Check if the target_element is in the children of this Header
+                if target_element in element.children:
+                    return element
+                # Recursively check the children of this Header
+                parent = self.find_parent_element(element.children, target_element)
+                if parent is not None:
+                    return parent
+        # If no parent is found, return None
+        return None 
     def find_parent_and_index(self, current_list: List[Element], target: Element) -> tuple[List[Element], int] | None:
         """Finds the parent list and index of the target element in the tree."""
         for i, elem in enumerate(current_list):
@@ -215,4 +238,38 @@ class TreeNumbering:
         else:
             self.tree.append(new_header)
         self.assign_numbers()
-    
+    def adjust_header_levels(self,parent: Header, child: Header):
+        if parent  is None:
+           child.level=1 
+        else:
+            new_child_level = parent.level + 1
+            child.level = new_child_level
+
+        # Recursively adjust all children of this child
+        for element in child.children:
+            if isinstance(element, Header):
+                # For each grandchild, maintain the same relative level difference
+                # but based on the new child level
+                self.adjust_header_levels(child, element)
+    def move_element(self, parent: Element, element: Element, after:Element=None):
+
+        parent_info = self.find_parent_and_index(self.tree, element)
+        if parent_info is None:
+            raise ValueError("Элемент не найден в дереве")
+
+        parent_list, index = parent_info
+        parent_list.pop(index)
+        if isinstance(element, Header):
+            if parent is None:
+
+                self.add_top_level_header(element, after_header=after)
+            else:
+                self.add_nested_header(parent, element, after_child=after)
+        else:
+            if parent is None:
+                raise ValueError("Non-header elements must have a parent")
+            self.add_after(parent, element)
+            if not isinstance(parent,Header):
+                after=parent
+
+        self.assign_numbers()

@@ -293,8 +293,13 @@ class WordDocumentManager:
             for child in parent.children:
                 
                 if child == element:
-                    if  isinstance(parent.children[len(parent.children)-2],Header):
-                       insert_position = self._get_last_nested_element(parent.children[len(parent.children)-2])
+                    index  = parent.children.index(child)-1
+                    if  index > -1 and isinstance(parent.children[index],Header):
+                       insert_position = self._get_last_nested_element(parent.children[index])
+                    elif index> -1 and not isinstance(parent.children[index],Header):
+                        break
+                    else:
+                        insert_position = parent.docx_element._element
                     break
                 if hasattr(child, 'docx_table') and child.docx_table:
                     insert_position = child.docx_table._element
@@ -354,12 +359,8 @@ class WordDocumentManager:
             element.docx_element.add_run("\t")
             # Add caption run
             caption_run = element.docx_element.add_run(f"{element.caption}")
-            caption_run.font.size = int(14 * 12700)  # 9pt
-            caption_run.font.italic = True
             element.docx_caption_paragraph = caption_run
-            # Right-align the paragraph
             element.docx_element.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            doc_elements = [element.docx_element._element]
             
             
         elif isinstance(element, Listing):
@@ -417,7 +418,209 @@ class WordDocumentManager:
             parent_element = main_element.getparent()
             main_index = parent_element.index(main_element) + 1
             parent_element.insert(main_index, element.docx_caption_paragraph._element)
-    
+    def _sync_move_to_doc(self, element: Element, parent: Optional[Element], after: Optional[Element], main_el: Optional[Header],stop_el:Optional[Header]):
+        """Синхронизирует отдельный элемент с документом."""
+        # Определяем позицию вставки
+        
+        insert_position = None
+        if after and not isinstance(element,Header):
+            
+            if hasattr(after, 'docx_table') and after.docx_table:
+                insert_position = after.docx_table._element
+            elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
+                insert_position = after.docx_caption_paragraph._element
+            elif hasattr(after, 'docx_elements') and after.docx_elements:
+                insert_position = after.docx_elements[-1]._element
+            elif hasattr(after, 'docx_element') and after.docx_element:
+                insert_position = after.docx_element._element
+        elif parent and isinstance(parent, Header) and parent.docx_element and isinstance(after,Header):
+            insert_position = parent.docx_element._element
+            for child in parent.children:
+                if child == after:
+                    insert_position = self._get_last_nested_element(child)
+                    break
+        elif parent and isinstance(parent, Header) and parent.docx_element:
+            insert_position = parent.docx_element._element
+            for child in parent.children:
+                
+                if child == element:
+                    index  = parent.children.index(child)-1
+                    if  index > -1 and isinstance(parent.children[index],Header):
+                       insert_position = self._get_last_nested_element(parent.children[index])
+                    elif index> -1 and not isinstance(parent.children[index],Header):
+                        break
+                    else:
+                        insert_position = parent.docx_element._element
+                    break
+                if hasattr(child, 'docx_table') and child.docx_table:
+                    insert_position = child.docx_table._element
+                elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
+                    insert_position = child.docx_caption_paragraph._element
+                elif hasattr(child, 'docx_elements') and child.docx_elements:
+                    insert_position = child.docx_elements[-1]._element
+                elif hasattr(child, 'docx_element') and child.docx_element:
+                    insert_position = child.docx_element._element
+        elif isinstance(element, Header) and isinstance(after,Header) and parent is None:
+            for child in self.tree:
+                if child == after:
+                    insert_position = self._get_last_nested_element(child)
+                    break
+        main_element = None
+        if hasattr(element, 'docx_table') and element.docx_table:
+            main_element = element.docx_table._element
+        elif hasattr(element, 'docx_listing_paragraphs') and element.docx_listing_paragraphs:
+            main_element = [p._element for p in element.docx_listing_paragraphs]
+        elif hasattr(element, 'docx_image_paragraph') and element.docx_image_paragraph:
+            main_element = element.docx_image_paragraph._element
+        elif hasattr(element, 'docx_elements') and element.docx_elements:
+            main_element = [p._element for p in element.docx_elements]
+        elif hasattr(element, 'docx_element') and element.docx_element:
+            main_element = element.docx_element._element
+        if isinstance(element,Header):
+            element.docx_element.style = f'Heading {element.level}'
+
+        if insert_position is not None and main_element is not None:
+            # Вставляем после insert_position
+            parent_element = insert_position.getparent()
+            insert_index = parent_element.index(insert_position) + 1
+            if isinstance(element,Listing) or isinstance(element,ListElement):
+                for main_elemend in main_element:
+                    parent_element.insert(insert_index, main_elemend)
+                    insert_index += 1
+            else:
+                parent_element.insert(insert_index, main_element)
+                # self.safe_insert_after(parent_element, insert_position, main_element)
+        if isinstance(element, Table) and element.docx_caption_paragraph:
+            # Подпись таблицы перед таблицей
+            parent_element = element.docx_table._element.getparent()
+            table_index = parent_element.index(element.docx_table._element)
+            parent_element.insert(table_index, element.docx_caption_paragraph._element)
+        elif isinstance(element, (Image, Listing)) and element.docx_caption_paragraph:
+            # Подпись изображения и листинга после основного элемента
+            main_element = element.docx_image_paragraph._element if isinstance(element, Image) else element.docx_listing_paragraphs[-1]._element
+            parent_element = main_element.getparent()
+            main_index = parent_element.index(main_element) + 1
+            parent_element.insert(main_index, element.docx_caption_paragraph._element)
+        # if main_el is not None:
+        #     if isinstance(element, Header):
+        #         if element.children:
+        #             self._sync_move_to_doc(element.children[0], element, None, element,None)
+        #         else:
+        #             next_el, parent = self.climb_to_next_element(element, stop_el)
+        #             if next_el:
+        #                 self.move_with_prev_header(next_el, parent)
+        #     else:
+        #         next_el = self.get_next_element(main_el, element)
+        #         if next_el is None:
+        #             next_el, parent = self.climb_to_next_element(main_el, stop_el)
+        #             if next_el:
+        #                 self.move_with_prev_header(next_el, parent)
+        #         elif isinstance(next_el, Header):
+        #             self.move_with_prev_header(next_el, main_el)
+        #         else:
+        #             self._sync_move_to_doc(next_el, None, element, main_el,None)
+
+        if main_el is not None:
+            if isinstance(element,Header) and element.children:
+                self._sync_move_to_doc(element.children[0],element,None,element,stop_el)
+            elif not isinstance(element,Header):
+                 index = main_el.children.index(element)
+                 next_element = main_el.children[index + 1] if index + 1 < len(main_el.children) else None
+                 if next_element is not None and not isinstance(next_element,Header):
+                    self._sync_move_to_doc(next_element,None,element,main_el,stop_el)
+                 elif next_element is not None and  isinstance(next_element,Header):
+                    prev_header = self.find_previous_header(next_element,main_el)
+                    self._sync_move_to_doc(next_element,main_el,prev_header,main_el,stop_el)
+
+                 elif next_element is None:
+                     parent_of_header =None 
+                     while True:               
+                        parent_of_header = self.numberer.find_parent_element(self.tree,main_el)
+                        if parent_of_header is stop_el or parent_of_header is None:
+                                break
+                        index = parent_of_header.children.index(main_el)
+                        next_element = parent_of_header.children[index + 1] if index + 1 < len(parent_of_header.children) else None
+                        if  next_element is None:
+                            main_el = parent_of_header
+                        else:
+                            break
+                     if parent_of_header is not  stop_el:
+                        main_el = parent_of_header
+                        prev_header = self.find_previous_header(next_element,main_el)
+                        self._sync_move_to_doc(next_element,main_el,prev_header,main_el,stop_el)
+                        
+            elif isinstance(element,Header) and not element.children:
+                while True:
+                    parent_of_header = self.numberer.find_parent_element(self.tree,element)
+                    if parent_of_header is stop_el or parent_of_header is None:
+                        break
+                    index = parent_of_header.children.index(element)
+                    next_element = parent_of_header.children[index + 1] if index + 1 < len(parent_of_header.children) else None
+                    if  next_element is None:
+                        main_el = parent_of_header
+                    else:
+                        break
+                if parent_of_header is not  stop_el:
+                    main_el = parent_of_header
+                    prev_header = self.find_previous_header(next_element,main_el)
+                    self._sync_move_to_doc(next_element,main_el,prev_header,main_el,stop_el)
+                    
+
+                
+            
+            
+                 
+                     
+                 
+                 
+
+    def safe_insert_after(self,parent_element, insert_position, new_element):
+        # Если new_element уже в документе — удалить
+        if new_element.getparent() is not None:
+            # Защита от вставки родителя в своего потомка
+            cur = insert_position
+            while cur is not None:
+                if cur is new_element:
+                    return  # нельзя вставить родителя внутрь потомка
+                cur = cur.getparent()
+            new_element.getparent().remove(new_element)
+        # Вставка
+        insert_index = parent_element.index(insert_position) + 1
+        parent_element.insert(insert_index, new_element)
+ 
+             
+    def get_next_element(self,parent, child):
+        index = parent.children.index(child)
+        return parent.children[index + 1] if index + 1 < len(parent.children) else None
+
+    def climb_to_next_element(self,start_el, stop_el):
+        current = start_el
+        while True:
+            parent = self.numberer.find_parent_element(self.tree, current)
+            if parent is stop_el:
+                return None, parent
+            next_el = self.get_next_element(parent, current)
+            if next_el is None:
+                current = parent
+            else:
+                return next_el, parent
+
+    def move_with_prev_header(self,next_el, main_el):
+        prev_header = self.find_previous_header(next_el, main_el)
+        self._sync_move_to_doc(next_el, main_el, prev_header, main_el,None)
+
+    def find_previous_header(self,current_header: Header, parent: Header) -> Optional[Header]:
+    # Ищем текущий заголовок среди детей родителя
+        for i, child in enumerate(parent.children):
+            if child == current_header:
+                # Идем в обратном порядке от текущего индекса
+                for j in range(i - 1, -1, -1):
+                    candidate = parent.children[j]
+                    if isinstance(candidate, Header) and candidate.level <= current_header.level:
+                        return candidate
+                return None  # Ничего не нашли
+        return None
+
     def remove_header(self, element: Element, force: bool = False):
         """Удаляет заголовок из документа. Если force=True, удаляет заголовок и его дочерние элементы, иначе удаляет только если нет дочерних элементов."""
         if isinstance(element, Header) and element.docx_element:
@@ -574,6 +777,21 @@ class WordDocumentManager:
     def save_document(self, path: Optional[str] = None):
         """Сохраняет документ."""
         self.doc.save(path or self.doc_path)
+    def move_element_word(self, parent: Element, element: Element, after:Element =None):
+        
+        if isinstance(element,Header):
+            self.numberer.adjust_header_levels(parent,element)
+        
+        self.numberer.move_element(parent,element,after)
+        
+        if not isinstance(element,Header) and not isinstance(parent,Header):
+            after=parent
+        if isinstance(element,Header):
+            self._sync_move_to_doc(element,parent,after,element,parent)
+        else:
+            self._sync_move_to_doc(element,parent,after,None,None)
+            
+            
 
 # Пример использования
 if __name__ == "__main__":
@@ -609,9 +827,10 @@ if __name__ == "__main__":
     new_image1 = Image(image_data=image_data, caption="Новdsdasdое изображение")
     doc_manager.add_element(new_header, new_image1)
     
-    new_header3 = Header(level=2, text="3333 заголовок", children=[])
+    new_header3 = Header(level=2, text="d заголовок", children=[])
     
     doc_manager.add_element(new_header, new_header3)
+    doc_manager.add_element(new_header3,Formula('a-2=2','(dsad'))
     new_imagdasdedsds321a = Paragraph('321321321',None)
     doc_manager.add_element(new_header3, new_imagdasdedsds321a)
     new_header4 = Header(level=3, text="хитрый кейс3333 заголовок", children=[])
@@ -698,5 +917,30 @@ if __name__ == "__main__":
     doc_manager.update_element(tab2вы3dase,Formula('2+2=10',''))
     doc_manager.update_element(lit3,Listing(f"poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'capton new one'))
     doc_manager.update_element(lit,Listing(f"3213123 1321poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnasposo smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'32capton new one'))
+    doc_manager.remove_element(tab2вы3dasde)
+    new_header103 = Header(level=3, text="toooto", children=[])
+
+    doc_manager.add_element(new_header8,new_header103)
+    doc_manager.add_element(new_header103,Paragraph("32131312412 412 4214но вот и все par updated"))
+    doc_manager.add_element(new_header103,Paragraph("dlasjd dk askdj lkasdно вот и все par updated"))
+    new_header104 = Header(level=3, text="che dks", children=[])
+
+    doc_manager.add_element(new_header8,new_header104,new_header103)
+    doc_manager.add_element(new_header104,Paragraph("IMage knodskd skds;kdaskdkasd 412 4214но вот и все par updated"))
+    doc_manager.add_element(new_header104,Paragraph("dasindm; j1nj2eeio12e2m21eio dk askdj lkasdно вот и все par updated"))
+    new_header105 = Header(level=3, text="new_header105 che dks", children=[])
+
+    doc_manager.add_element(new_header8,new_header105,new_header103)
+    doc_manager.add_element(new_header105,Paragraph("new_header105 knodskd skds;kdaskdkasd 412 4214но вот и все par updated"))
+    doc_manager.add_element(new_header105,Paragraph("new_header105; j1nj2eeio12e2m21eio dk askdj lkasdно вот и все par updated"))
+
+    doc_manager.move_element_word(new_header4,new_header8)
+    doc_manager.move_element_word(new_header,new_header8,new_header5)
+    # doc_manager.move_element_word(None,new_header8,new_header7)
+    
+    # doc_manager.move_element_word(None, new_header8,new_header7)
+    # doc_manager.move_element_word(None, new_header8)
+    # doc_manager.move_element_word(new_imagdasdedsds321a,new_imagdasdedsds321adass)
+    # doc_manager.move_element_word(new_imagdasdedsds321a,new_image3d21)
     print_tree(doc_manager.tree)
     doc_manager.save_document()

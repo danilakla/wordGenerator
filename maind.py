@@ -90,6 +90,7 @@ def has_formula(paragraph):
     has_omath = paragraph._element.findall('.//m:oMath', namespaces=nsmap)
     has_omathpara = paragraph._element.findall('.//m:oMathPara', namespaces=nsmap)
     # print(f"Checking paragraph for formula: has_omath={len(has_omath) > 0}, has_omathpara={len(has_omathpara) > 0}")
+    
     return has_omath or has_omathpara
 
 def extract_formula_and_caption(paragraph):
