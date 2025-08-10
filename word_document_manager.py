@@ -190,13 +190,21 @@ class WordDocumentManager:
             element.docx_caption_paragraph.text=element.caption
             
         elif isinstance(element, Formula):
-            if element.docx_element is not None and len(element.docx_element.runs) > 0:
-                # Получаем первый Run
-                formula_run = element.docx_element.runs[0]
-                # Очищаем его
-                formula_run._element.clear()
-                # Добавляем новую формулу
+            if element.docx_element is not None:
+                # element.docx_element is now a table with 1 row and 3 columns
+                table = element.docx_element
+        
+                # --- Update formula in cell(0, 1) ---
+                formula_cell = table.cell(0, 1)
+                formula_para = formula_cell.paragraphs[0]
+                formula_para.clear()  # Custom helper needed — python-docx has no built-in clear
+                formula_run = formula_para.add_run()
                 formula_run._element.append(self._create_omath_element(element.formula))
+        
+                # --- Update caption in cell(0, 2) ---
+                caption_cell = table.cell(0, 2)
+                caption_para = caption_cell.paragraphs[0]
+                caption_para.text = f"{element.caption}"
             
             
         elif isinstance(element, Listing):
@@ -252,6 +260,8 @@ class WordDocumentManager:
         
         if hasattr(element, 'docx_table') and element.docx_table:
             last_element = element.docx_table._element
+        elif hasattr(element, 'formula') and element.docx_element:
+            last_element = element.docx_element._element
         elif hasattr(element, 'docx_caption_paragraph') and element.docx_caption_paragraph:
             last_element = element.docx_caption_paragraph._element
         elif hasattr(element, 'docx_elements') and element.docx_elements:
@@ -276,6 +286,8 @@ class WordDocumentManager:
             
             if hasattr(after, 'docx_table') and after.docx_table:
                 insert_position = after.docx_table._element
+            elif hasattr(after, 'formula') and after.docx_table:
+                insert_position = after.docx_element._element
             elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
                 insert_position = after.docx_caption_paragraph._element
             elif hasattr(after, 'docx_elements') and after.docx_elements:
@@ -303,6 +315,8 @@ class WordDocumentManager:
                     break
                 if hasattr(child, 'docx_table') and child.docx_table:
                     insert_position = child.docx_table._element
+                elif hasattr(child, 'formula') and child.docx_element:
+                    insert_position = child.docx_element._element
                 elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
                     insert_position = child.docx_caption_paragraph._element
                 elif hasattr(child, 'docx_elements') and child.docx_elements:
@@ -346,21 +360,34 @@ class WordDocumentManager:
                     element.docx_table.rows[i].cells[j].text = cell
         elif isinstance(element, Formula):
             from docx.enum.text import WD_ALIGN_PARAGRAPH
-            element.docx_element = self.doc.add_paragraph()
-            # Add formula run first (centered)
-            formula_run = element.docx_element.add_run()
+
+            # Create table with 1 row and 3 columns
+            table = self.doc.add_table(rows=1, cols=3)
+
+            # Remove borders if you don't want them
+            for row in table.rows:
+                for cell in row.cells:
+                    for para in cell.paragraphs:
+                        para.paragraph_format.space_after = 0
+                        para.paragraph_format.space_before = 0
+
+            # Column 2 (index 1) - formula centered
+            formula_cell = table.cell(0, 1)
+            formula_para = formula_cell.paragraphs[0]
+            formula_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            formula_run = formula_para.add_run()
             formula_run._element.append(self._create_omath_element(element.formula))
-            # Add a tab to separate formula and caption
-            element.docx_element.add_run("\t")
-            element.docx_element.add_run("\t")
-            element.docx_element.add_run("\t")
-            element.docx_element.add_run("\t")
-            element.docx_element.add_run("\t")
-            element.docx_element.add_run("\t")
-            # Add caption run
-            caption_run = element.docx_element.add_run(f"{element.caption}")
-            element.docx_caption_paragraph = caption_run
-            element.docx_element.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+            # Column 3 (index 2) - caption right-aligned
+            caption_cell = table.cell(0, 2)
+            caption_para = caption_cell.paragraphs[0]
+            caption_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            caption_para.text=(f"{element.caption}")
+
+            # Save table reference if needed
+            element.docx_element = table
+            element.docx_caption_paragraph=caption_para
+
             
             
         elif isinstance(element, Listing):
@@ -388,6 +415,8 @@ class WordDocumentManager:
         main_element = None
         if hasattr(element, 'docx_table') and element.docx_table:
             main_element = element.docx_table._element
+        if hasattr(element,"formula")and  element.docx_element:
+            main_element = element.docx_element._element
         elif hasattr(element, 'docx_listing_paragraphs') and element.docx_listing_paragraphs:
             main_element = [p._element for p in element.docx_listing_paragraphs]
         elif hasattr(element, 'docx_image_paragraph') and element.docx_image_paragraph:
@@ -427,6 +456,8 @@ class WordDocumentManager:
             
             if hasattr(after, 'docx_table') and after.docx_table:
                 insert_position = after.docx_table._element
+            elif hasattr(after, 'formula') and after.docx_element:
+                insert_position = after.docx_element._element
             elif hasattr(after, 'docx_caption_paragraph') and after.docx_caption_paragraph:
                 insert_position = after.docx_caption_paragraph._element
             elif hasattr(after, 'docx_elements') and after.docx_elements:
@@ -454,6 +485,8 @@ class WordDocumentManager:
                     break
                 if hasattr(child, 'docx_table') and child.docx_table:
                     insert_position = child.docx_table._element
+                elif hasattr(child, 'formula') and child.docx_element:
+                    insert_position = child.docx_element._element
                 elif hasattr(child, 'docx_caption_paragraph') and child.docx_caption_paragraph:
                     insert_position = child.docx_caption_paragraph._element
                 elif hasattr(child, 'docx_elements') and child.docx_elements:
@@ -468,6 +501,8 @@ class WordDocumentManager:
         main_element = None
         if hasattr(element, 'docx_table') and element.docx_table:
             main_element = element.docx_table._element
+        elif hasattr(element, 'formula') and element.docx_element:
+            main_element = element.docx_element._element
         elif hasattr(element, 'docx_listing_paragraphs') and element.docx_listing_paragraphs:
             main_element = [p._element for p in element.docx_listing_paragraphs]
         elif hasattr(element, 'docx_image_paragraph') and element.docx_image_paragraph:
@@ -564,30 +599,7 @@ class WordDocumentManager:
                     main_el = parent_of_header
                     prev_header = self.find_previous_header(next_element,main_el)
                     self._sync_move_to_doc(next_element,main_el,prev_header,main_el,stop_el)
-                    
-
-                
-            
-            
-                 
                      
-                 
-                 
-
-    def safe_insert_after(self,parent_element, insert_position, new_element):
-        # Если new_element уже в документе — удалить
-        if new_element.getparent() is not None:
-            # Защита от вставки родителя в своего потомка
-            cur = insert_position
-            while cur is not None:
-                if cur is new_element:
-                    return  # нельзя вставить родителя внутрь потомка
-                cur = cur.getparent()
-            new_element.getparent().remove(new_element)
-        # Вставка
-        insert_index = parent_element.index(insert_position) + 1
-        parent_element.insert(insert_index, new_element)
- 
              
     def get_next_element(self,parent, child):
         index = parent.children.index(child)
@@ -917,7 +929,7 @@ if __name__ == "__main__":
     doc_manager.update_element(tab2вы3dase,Formula('2+2=10',''))
     doc_manager.update_element(lit3,Listing(f"poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'capton new one'))
     doc_manager.update_element(lit,Listing(f"3213123 1321poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnasposo smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'32capton new one'))
-    doc_manager.remove_element(tab2вы3dasde)
+    # doc_manager.remove_element(tab2вы3dasde)
     new_header103 = Header(level=3, text="toooto", children=[])
 
     doc_manager.add_element(new_header8,new_header103)

@@ -287,11 +287,25 @@ def parse_document(doc_path):
             if table_index < len(doc.tables):
                 table = doc.tables[table_index]
                 table_index += 1
-                caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
-                pending_table_caption = None
-                data = [[cell.text.strip() for cell in row.cells] for row in table.rows]
-                parent = stack[-1]
-                parent.append(Table(data, caption, table, caption_paragraph, ""))
+                is_formula_table = (
+                    len(table.rows) == 1 and
+                    len(table.columns) == 3 and
+                    has_formula(table.cell(0, 1).paragraphs[0])
+                )
+                if is_formula_table:
+                    # Извлекаем формулу и подпись
+                    formula, _ = extract_formula_and_caption(table.cell(0, 1).paragraphs[0])
+                    caption = table.cell(0, 2).text.strip() or None
+
+                    parent = stack[-1]
+                    parent.append(Formula(formula, caption, table.cell(0, 1).paragraphs[0],
+                                          None, table))
+                else: 
+                    caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
+                    pending_table_caption = None
+                    data = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+                    parent = stack[-1]
+                    parent.append(Table(data, caption, table, caption_paragraph, ""))
             else:
                 parent = stack[-1]
                 parent.append(UndefinedElement(str(element), element))
