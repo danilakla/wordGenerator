@@ -1,83 +1,21 @@
 
-from typing import List, Optional
+from typing import  Optional
 from docx import Document
-from docx.text.paragraph import Paragraph as DocxParagraph
-from docx.oxml.ns import qn
-from docx.enum.style import WD_STYLE_TYPE
+from docx.text.paragraph import Paragraph 
 from elements import Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
+from formula_helper import FormulaHelper
 from maind import print_tree
+from style_manager import StyleManager
 from tree_numbering import TreeNumbering
 from io import BytesIO
 
-class StyleManager:
-    def __init__(self, doc: Document):
-        self.doc = doc
-        self._ensure_styles()
 
-    def _ensure_styles(self):
-        """Ensures required styles exist in the document."""
-        styles = self.doc.styles
-        style_definitions = [
-            ("Caption", WD_STYLE_TYPE.PARAGRAPH, "Caption", {"font_size": 9, "italic": True}),
-            ("Listing", WD_STYLE_TYPE.PARAGRAPH, "Normal", {"font_name": "Courier New", "font_size": 10}),
-            ("List Bullet", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard unordered list style
-            ("List Number", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard ordered list style
-        ]
-
-        for style_name, style_type, base_style, properties in style_definitions:
-            if style_name not in styles:
-                style = styles.add_style(style_name, style_type)
-                if base_style and base_style in styles:
-                    style.base_style = styles[base_style]
-                for prop, value in properties.items():
-                    if prop == "font_size":
-                        style.font.size = int(value * 12700)  # Convert points to EMU (1 pt = 12700 EMU)
-                    elif prop == "font_name":
-                        style.font.name = value
-                    elif prop == "italic":
-                        style.font.italic = value
-
-    def apply_header_style(self, header: Header):
-        if header.docx_element:
-            header.docx_element.style = f"Heading {header.level}"
-
-    def apply_image_style(self, image: Image):
-        if image.docx_image_paragraph:
-            image.docx_image_paragraph.style = "Normal"
-        if image.docx_caption_paragraph:
-            image.docx_caption_paragraph.style = "Caption"
-
-    def apply_table_style(self, table: Table):
-        if table.docx_table:
-            table.docx_table.style = "Table Grid"
-        if table.docx_caption_paragraph:
-            table.docx_caption_paragraph.style = "Caption"
-
-    def apply_formula_style(self, formula: Formula):
-        if formula.docx_element:
-            formula.docx_element.style = "Normal"
-        if formula.docx_caption_paragraph:
-            formula.docx_caption_paragraph.style = "Caption"
-
-    def apply_listing_style(self, listing: Listing):
-        for para in listing.docx_listing_paragraphs:
-            para.style = "Listing"
-        if listing.docx_caption_paragraph:
-            listing.docx_caption_paragraph.style = "Caption"
-
-    def apply_paragraph_style(self, paragraph: Paragraph):
-        if paragraph.docx_element:
-            paragraph.docx_element.style = "Normal"
-
-    def apply_list_style(self, list_element: ListElement):
-        style_name = "List Bullet" if list_element.list_type == "unordered" else "List Number"
-        for para in list_element.docx_elements:
-            para.style = style_name
 
 class WordDocumentManager:
     def __init__(self, doc_path: str):
         self.doc = Document(doc_path)
         self.tree = []
+        self.formula_meneger =  FormulaHelper("mml2omml.xsl")
         self.numberer = TreeNumbering(self.tree)
         self.style_manager = StyleManager(self.doc)
         self.doc_path = doc_path
@@ -199,7 +137,7 @@ class WordDocumentManager:
                 formula_para = formula_cell.paragraphs[0]
                 formula_para.clear()  # Custom helper needed — python-docx has no built-in clear
                 formula_run = formula_para.add_run()
-                formula_run._element.append(self._create_omath_element(element.formula))
+                formula_run._element.append(self.formula_meneger._create_omath_element(element.formula))
         
                 # --- Update caption in cell(0, 2) ---
                 caption_cell = table.cell(0, 2)
@@ -376,7 +314,7 @@ class WordDocumentManager:
             formula_para = formula_cell.paragraphs[0]
             formula_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             formula_run = formula_para.add_run()
-            formula_run._element.append(self._create_omath_element(element.formula))
+            formula_run._element.append(self.formula_meneger._create_omath_element(element.formula))
 
             # Column 3 (index 2) - caption right-aligned
             caption_cell = table.cell(0, 2)
@@ -536,25 +474,6 @@ class WordDocumentManager:
             parent_element = main_element.getparent()
             main_index = parent_element.index(main_element) + 1
             parent_element.insert(main_index, element.docx_caption_paragraph._element)
-        # if main_el is not None:
-        #     if isinstance(element, Header):
-        #         if element.children:
-        #             self._sync_move_to_doc(element.children[0], element, None, element,None)
-        #         else:
-        #             next_el, parent = self.climb_to_next_element(element, stop_el)
-        #             if next_el:
-        #                 self.move_with_prev_header(next_el, parent)
-        #     else:
-        #         next_el = self.get_next_element(main_el, element)
-        #         if next_el is None:
-        #             next_el, parent = self.climb_to_next_element(main_el, stop_el)
-        #             if next_el:
-        #                 self.move_with_prev_header(next_el, parent)
-        #         elif isinstance(next_el, Header):
-        #             self.move_with_prev_header(next_el, main_el)
-        #         else:
-        #             self._sync_move_to_doc(next_el, None, element, main_el,None)
-
         if main_el is not None:
             if isinstance(element,Header) and element.children:
                 self._sync_move_to_doc(element.children[0],element,None,element,stop_el)
@@ -683,12 +602,7 @@ class WordDocumentManager:
         elif isinstance(element, ListElement):
             self.style_manager.apply_list_style(element)
 
-    # def _create_omath_element(self, formula: str):
-    #     """Создает oMath элемент для формулы (заглушка, требует доработки)."""
-    #     from docx.oxml import OxmlElement
-    #     omath = OxmlElement('m:oMath')
-    #     # Здесь нужно добавить парсинг formula в MathML, если требуется
-    #     return omath
+ 
     def _create_omath_element(self, formula: str):
         """
         Creates an oMath element for a mathematical formula.
@@ -926,7 +840,7 @@ if __name__ == "__main__":
     ds32 = Table([["01","1"],["02","2"],["3","3"]]," n ni niFracation table")
     doc_manager.add_element(new_header8,ds32)
     doc_manager.update_element (ds32, Table([["10","10"],["20","20"]],"Fracat32ion table"))
-    doc_manager.update_element(tab2вы3dase,Formula('2+2=10',''))
+    doc_manager.update_element(tab2вы3dase,Formula(r"\frac{1}{2}-\frac{\frac{10}{20}-}{}=30\begin{bmatrix} 1& 1 &1 1 \\ 1& 1 &1 1 \\ 1& 1 &1 1 \end{bmatrix}",''))
     doc_manager.update_element(lit3,Listing(f"poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'capton new one'))
     doc_manager.update_element(lit,Listing(f"3213123 1321poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnasposo smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'32capton new one'))
     # doc_manager.remove_element(tab2вы3dasde)

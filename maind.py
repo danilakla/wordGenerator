@@ -362,60 +362,6 @@ def print_tree(elements, indent=0, prefix=""):
 if __name__ == "__main__":
     doc_path = "tst.docx"
     elements_tree = parse_document(doc_path)
-    numberer = TreeNumbering(elements_tree)
-    numberer.assign_numbers()
-    new_header = Header(level=1, text="Новый заголовок", children=[])
-    numberer.add_top_level_header(new_header)
-
-
-
-    # Добавление изображения под заголовок
-    new_image = Image(b'', caption="Новое изображение")
-    new_imagdasde = Paragraph('dasdasd',None)
-    new_imagdasdedsa = Paragraph('dasda32132131231sd',None)
-    
-    numberer.add_after(new_header, new_image)
-    numberer.add_after(new_image, new_imagdasde)
-    numberer.add_after(new_image, new_imagdasdedsa)
-    new_header2 = Header(level=2, text="Новый222 заголовок", children=[])
-    numberer.add_nested_header(new_header, new_header2)
-    new_imagdasdedsdsa = Paragraph('2020220',None)
-    new_imagdasdedsdsa32 = Paragraph('2020220323232',None)
-    numberer.add_after(new_header2, new_imagdasdedsdsa)
-    numberer.add_after(new_imagdasdedsdsa, new_imagdasdedsdsa32)
-    new_image1 = Image(b'', caption="Новdsdasdое изображение")
-    numberer.add_after(new_header, new_image1)
-    
-    new_header3 = Header(level=2, text="3333 заголовок", children=[])
-    numberer.add_nested_header(new_header, new_header3)
-    new_imagdasdedsds321a = Paragraph('321321321',None)
-    numberer.add_after(new_header3, new_imagdasdedsds321a)
-    new_header4 = Header(level=3, text="хитрый кейс3333 заголовок", children=[])
-    numberer.add_nested_header(new_header2,new_header4)
-    new_imagdasdeddassds321a = Paragraph('[bnh эомент]',None)
-    numberer.add_after(new_header4,new_imagdasdeddassds321a)
-
-    new_header5 = Header(level=2, text="Ну если и это заголоовк мошны йто просто молчу", children=[])
-    numberer.add_nested_header(new_header,new_header5,new_header2)
-    
-    new_imagdasdedsds321adass = Paragraph('pusin',None)
-    new_imagdasdedsds321adass1 = Paragraph('pusin2',None)
-    new_imagdasdedsds321adass2 = Paragraph('pusin3',None)
-    numberer.add_after(new_header5,new_imagdasdedsds321adass)
-    numberer.add_after(new_imagdasdedsds321adass,new_imagdasdedsds321adass1)
-    numberer.add_after(new_imagdasdedsds321adass,new_imagdasdedsds321adass2)
-
-
-    new_header7 = Header(level=1, text="иди сюда заголовок", children=[])
-    numberer.add_top_level_header(new_header7)
-    new_header8 = Header(level=2, text="иди сюда заголовок 2", children=[])
-    numberer.add_nested_header(new_header7,new_header8)
-    new_imagdasdedsds321adass2ds = Paragraph('susapusin3',None)
-    numberer.add_after(new_header8,new_imagdasdedsds321adass2ds)
-    new_header6 = Header(level=1, text="зайде укак я сюайд", children=[])
-    numberer.add_top_level_header(new_header6,new_header)
-    
-
     print("Document Structure:")
     print_tree(elements_tree)
   
