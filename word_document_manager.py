@@ -17,7 +17,7 @@ class WordDocumentManager:
         self.tree = []
         self.formula_meneger =  FormulaHelper("mml2omml.xsl")
         self.numberer = TreeNumbering(self.tree)
-        self.style_manager = StyleManager(self.doc)
+        self.style_manager = StyleManager(self.doc,self.tree)
         self.doc_path = doc_path
 
     def add_element(self, parent: Optional[Element], element: Element, after: Optional[Element] = None):
