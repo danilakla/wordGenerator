@@ -61,6 +61,14 @@ class WordDocumentManager:
     def _update_element_word(self, element: Element):
         if isinstance(element, Header):
             element.docx_element.text = element.text
+            from docx.shared import Pt, RGBColor
+            for run in element.docx_element.runs:
+                # Change font properties
+                run.font.name = 'Arial'  # Font family
+                run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
+                run.font.bold = True     # Bold
+                run.font.italic = False # No italic
+                run.font.color.rgb = RGBColor(255, 0, 0) 
         elif isinstance(element, Paragraph):
             element.docx_element.text=element.text
         elif isinstance(element, ListElement):
@@ -187,15 +195,14 @@ class WordDocumentManager:
                     
             element.docx_listing_paragraphs = new_paragraphs
             element.docx_caption_paragraph.text = element.caption
+    
     def _get_last_nested_element(self, element):
         """
         Рекурсивно находит самый последний элемент в иерархии дочерних элементов.
         Работает с элементами, которые могут содержать вложенную структуру (например, заголовки).
         """
         last_element = None
-
         # Проверяем сам элемент
-        
         if hasattr(element, 'docx_table') and element.docx_table:
             last_element = element.docx_table._element
         elif hasattr(element, 'formula') and element.docx_element:
@@ -266,12 +273,19 @@ class WordDocumentManager:
                 if child == after:
                     insert_position = self._get_last_nested_element(child)
                     break
-
-        
         # Добавляем элемент в документ
         if isinstance(element, Header):
             p = self.doc.add_heading(element.text, level=element.level)
             element.docx_element = p
+            element.docx_element.style = f'Heading {element.level}'
+            from docx.shared import Pt, RGBColor
+            for run in element.docx_element.runs:
+                # Change font properties
+                run.font.name = 'Arial'  # Font family
+                run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
+                run.font.bold = True     # Bold
+                run.font.italic = False # No italic
+                run.font.color.rgb = RGBColor(255, 0, 0) 
         elif isinstance(element, Paragraph):
             p = self.doc.add_paragraph(element.text)
             element.docx_element = p
@@ -451,6 +465,13 @@ class WordDocumentManager:
             main_element = element.docx_element._element
         if isinstance(element,Header):
             element.docx_element.style = f'Heading {element.level}'
+            from docx.shared import Pt, RGBColor
+            for run in element.docx_element.runs:
+                run.font.name = 'Arial'  
+                run.font.size = Pt(14)   
+                run.font.bold = True     
+                run.font.italic = False 
+                run.font.color.rgb = RGBColor(255, 0, 0) 
 
         if insert_position is not None and main_element is not None:
             # Вставляем после insert_position
