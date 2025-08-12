@@ -362,6 +362,7 @@ def print_tree(elements, indent=0, prefix=""):
 if __name__ == "__main__":
     doc_path = "tst.docx"
     elements_tree = parse_document(doc_path)
+    TreeNumbering(elements_tree).assign_numbers()
     print("Document Structure:")
     print_tree(elements_tree)
   

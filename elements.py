@@ -27,6 +27,7 @@ class Paragraph(Element):
     docx_element: Optional[DocxParagraph] = None
 
 # Список
+# Список
 @dataclass
 class ListElement(Element):
     items: List[str]
@@ -65,7 +66,7 @@ class Table(Element):
 class Formula(Element):
     formula: str
     caption: str
-    docx_element: Optional[DocxParagraph] = None
+    docx_element: Optional[DocxTable] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None
     text_number_of_element: str = ""
 

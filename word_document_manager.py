@@ -37,7 +37,7 @@ class WordDocumentManager:
 
         self.numberer.assign_numbers()
         self._sync_element_to_doc(element, parent, after)
-        # self._apply_styles(element)
+        self._apply_styles(element)
 
     def remove_element(self, element: Element):
         """Удаляет элемент из дерева и документа."""
@@ -60,17 +60,17 @@ class WordDocumentManager:
 
     def _update_element_word(self, element: Element):
         if isinstance(element, Header):
-            element.docx_element.text = element.text
-            from docx.shared import Pt, RGBColor
-            for run in element.docx_element.runs:
-                # Change font properties
-                run.font.name = 'Arial'  # Font family
-                run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
-                run.font.bold = True     # Bold
-                run.font.italic = False # No italic
-                run.font.color.rgb = RGBColor(255, 0, 0) 
+            element.docx_element.runs[0].text = element.text
+            # from docx.shared import Pt, RGBColor
+            # for run in element.docx_element.runs:
+            #     # Change font properties
+            #     run.font.name = 'Arial'  # Font family
+            #     run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
+            #     run.font.bold = True     # Bold
+            #     run.font.italic = False # No italic
+            #     run.font.color.rgb = RGBColor(255, 0, 0) 
         elif isinstance(element, Paragraph):
-            element.docx_element.text=element.text
+            element.docx_element.runs[0].text=element.text
         elif isinstance(element, ListElement):
         # 1. Удаляем старые параграфы из документа
             old_paragraphs = element.docx_elements.copy()
@@ -111,7 +111,7 @@ class WordDocumentManager:
                         img_byte_arr = BytesIO()
                         img.save(img_byte_arr, format='PNG')
                         run.add_picture(BytesIO(img_byte_arr.getvalue()))
-            element.docx_caption_paragraph.text = element.caption
+            element.docx_caption_paragraph.runs[0].text = element.caption
         elif isinstance(element, Table):
             # Сохраняем ссылку на старую таблицу
             old_table = element.docx_table
@@ -278,14 +278,8 @@ class WordDocumentManager:
             p = self.doc.add_heading(element.text, level=element.level)
             element.docx_element = p
             element.docx_element.style = f'Heading {element.level}'
-            from docx.shared import Pt, RGBColor
-            for run in element.docx_element.runs:
-                # Change font properties
-                run.font.name = 'Arial'  # Font family
-                run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
-                run.font.bold = True     # Bold
-                run.font.italic = False # No italic
-                run.font.color.rgb = RGBColor(255, 0, 0) 
+            if element.level==1:
+                element.docx_element.paragraph_format.page_break_before=True
         elif isinstance(element, Paragraph):
             p = self.doc.add_paragraph(element.text)
             element.docx_element = p
@@ -388,6 +382,7 @@ class WordDocumentManager:
                     insert_index += 1
             else:
                 parent_element.insert(insert_index, main_element)
+   
         if isinstance(element, Table) and element.docx_caption_paragraph:
             # Подпись таблицы перед таблицей
             parent_element = element.docx_table._element.getparent()
@@ -465,13 +460,10 @@ class WordDocumentManager:
             main_element = element.docx_element._element
         if isinstance(element,Header):
             element.docx_element.style = f'Heading {element.level}'
-            from docx.shared import Pt, RGBColor
-            for run in element.docx_element.runs:
-                run.font.name = 'Arial'  
-                run.font.size = Pt(14)   
-                run.font.bold = True     
-                run.font.italic = False 
-                run.font.color.rgb = RGBColor(255, 0, 0) 
+        if isinstance(element,Header) and element.level==1 and  element.docx_element.paragraph_format.page_break_before==False:
+                element.docx_element.paragraph_format.page_break_before=True
+        if isinstance(element,Header) and element.level>1 and  element.docx_element.paragraph_format.page_break_before==True:
+                element.docx_element.paragraph_format.page_break_before=False
 
         if insert_position is not None and main_element is not None:
             # Вставляем после insert_position
@@ -612,16 +604,16 @@ class WordDocumentManager:
             self.style_manager.apply_header_style(element)
         elif isinstance(element, Image):
             self.style_manager.apply_image_style(element)
-        elif isinstance(element, Table):
-            self.style_manager.apply_table_style(element)
-        elif isinstance(element, Formula):
-            self.style_manager.apply_formula_style(element)
-        elif isinstance(element, Listing):
-            self.style_manager.apply_listing_style(element)
+        # elif isinstance(element, Table):
+        #     self.style_manager.apply_table_style(element)
+        # elif isinstance(element, Formula):
+        #     self.style_manager.apply_formula_style(element)
+        # elif isinstance(element, Listing):
+        #     self.style_manager.apply_listing_style(element)
         elif isinstance(element, Paragraph):
             self.style_manager.apply_paragraph_style(element)
-        elif isinstance(element, ListElement):
-            self.style_manager.apply_list_style(element)
+        # elif isinstance(element, ListElement):
+        #     self.style_manager.apply_list_style(element)
 
  
     def _create_omath_element(self, formula: str):
@@ -843,7 +835,7 @@ if __name__ == "__main__":
     image_data1 = img_byte_arr1.getvalue()
     lodsds= ListElement(['первый;','второй;', "третий."],'–')
     
-    # Удаление изображения
+    # # Удаление изображения
     doc_manager.remove_element(new_header6)
     doc_manager.remove_element(lit2)
     doc_manager.remove_element(tab23dase)
@@ -852,6 +844,7 @@ if __name__ == "__main__":
     doc_manager.remove_element(tab23e)
     doc_manager.add_element(lit3,lodsds)
     doc_manager.update_element(new_header10, Header(1,'проверка го гого'))
+    doc_manager.add_element(new_header10,Paragraph(" ndskm"))
     doc_manager.update_element(new_header4, Header(1,'ну я хитрееее тебя 333проверка го гого'))
     doc_manager.update_element(dkjsad2, Paragraph("но вот и все par updated"))
     doc_manager.update_element(lodsds, ListElement(['как-то так;','пися231;','ага.'],'–'))
@@ -874,7 +867,7 @@ if __name__ == "__main__":
 
     doc_manager.add_element(new_header8,new_header104,new_header103)
     doc_manager.add_element(new_header104,Paragraph("IMage knodskd skds;kdaskdkasd 412 4214но вот и все par updated"))
-    doc_manager.add_element(new_header104,Paragraph("dasindm; j1nj2eeio12e2m21eio dk askdj lkasdно вот и все par updated"))
+    doc_manager.add_element(new_header104,Paragraph("dasindm; j1nj2eeio12e2m21eio dk askdj lkasdно вот и все par updated dasdasdd ajsdn jasdnjasndj ansdjasn dasnddddddddddddddddddddddddddddddddddsnj ndjs ndj sndj asndjsj"))
     new_header105 = Header(level=3, text="new_header105 che dks", children=[])
 
     doc_manager.add_element(new_header8,new_header105,new_header103)
@@ -887,7 +880,7 @@ if __name__ == "__main__":
     
     # doc_manager.move_element_word(None, new_header8,new_header7)
     # doc_manager.move_element_word(None, new_header8)
-    # doc_manager.move_element_word(new_imagdasdedsds321a,new_imagdasdedsds321adass)
-    # doc_manager.move_element_word(new_imagdasdedsds321a,new_image3d21)
+    doc_manager.move_element_word(new_imagdasdedsds321a,new_imagdasdedsds321adass)
+    doc_manager.move_element_word(new_imagdasdedsds321a,new_image3d21)
     print_tree(doc_manager.tree)
     doc_manager.save_document()

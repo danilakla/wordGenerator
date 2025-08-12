@@ -61,16 +61,8 @@ class TreeNumbering:
                 element.text_number_of_element = ".".join(map(str, self.header_counters[:element.level]))
                 element.text =f"{element.text_number_of_element} {self.extract_text_after_leading_numbers(element.text)}"
                 if element.docx_element is not None and element.docx_element.text is not None:
-                    element.docx_element.text=element.text
-                    from docx.shared import Pt, RGBColor
-                    for run in element.docx_element.runs:
-                        # Change font properties
-                        run.font.name = 'Arial'  # Font family
-                        run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
-                        run.font.bold = True     # Bold
-                        run.font.italic = False # No italic
-                        run.font.color.rgb = RGBColor(255, 0, 0) 
-                # element.docx_element.text = f"{element.text_number_of_element} {element.text}"
+                    element.docx_element.runs[0].text=element.text
+                   
                 # Recursion for child elements
                 self._number_tree(element.children)
             elif isinstance(element, (Image, Table, Formula, Listing)):
@@ -126,7 +118,7 @@ class TreeNumbering:
         elif isinstance(element, Formula):
             element.caption = f"({element.text_number_of_element})"
         if element.docx_caption_paragraph is not None and element.docx_caption_paragraph.text is not None:
-                    element.docx_caption_paragraph.text=element.caption
+                    element.docx_caption_paragraph.runs[0].text=element.caption
     def update_numbering(self, subtree: List[Element], top_level_number: str = None):
         """Updates numbering for a subtree, starting from the specified top level."""
         if top_level_number is None:

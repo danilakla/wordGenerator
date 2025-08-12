@@ -9,16 +9,8 @@
       },
       "font": {
         "family": "Times New Roman",
-        "size": "14pt",
+        "size": 14,
         "lineSpacing": "single"
-      },
-      "paragraph": {
-        "indent": "1.25cm",
-        "lastLineMinLength": "1.875cm",
-        "hyphenation": {
-          "enabled": true,
-          "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
-        }
       },
       "typography": {
         "dash": "enDash",
@@ -35,20 +27,62 @@
         "skip": ["titlePage", "assignmentPage", "sectionFirstPage", "appendixFirstPage"]
       }
     },
-    "headings": {
-      "section": {
+    "paragraph": {
+        "first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+        "hyphenation": {
+          "enabled": true,
+          "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
+        },
+        "paragraph_format": {
         "alignment": "left",
-        "style": "bold",
         "case": "sentenceCase",
-        "spacingAfter": "18pt"
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "first_line":1.25
+      
+      }
+    },
+    "headings": {
+       "font": {
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":true,
+          "italic":false
+        }
+      },
+      "section":{
+      "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 18,
+        "spacingBefore": 0,
+        "first_line":1.25
+      }
       },
       "subsection": {
         "alignment": "left",
         "style": "bold",
         "case": "sentenceCase",
-        "spacingAfter": "12pt",
-        "spacingBefore": "18pt",
-        "spacingBeforeAnotherSubSection": "6pt"
+        "spacingAfter": 12,
+        "spacingBefore": 18,
+        "spacingBeforeAnotherSubSection": 6
       },
       "special": {
         "titles": ["Abstract", "TableOfContents", "Introduction", "Conclusion", "References"],
@@ -87,18 +121,41 @@
       }
     },
     "figures": {
+
+        "first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+        "hyphenation": {
+          "enabled": true,
+          "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
+        },
+        "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 14,
+        "spacingBefore": 6,
+        "first_line":0
+      
+      },
+      "spacingBefore":14,
+      "spacingAfter":0,
       "caption": {
         "position": "below",
         "label": "Рисунок {sectionNumber}.{itemNumber} – {Description}",
         "referenceFormat": "fullWord",
         "alignment": "center"
       },
+      
       "alignment": "center",
-      "spacing": {
-        "before": "14pt",
-        "betweenFigureAndCaption": "6pt",
-        "afterCaption": "14pt"
-      },
       "restrictions": {
         "noSectionEnd": true
       }
@@ -309,4 +366,4 @@
       }
     }
   }
-}
+  }
