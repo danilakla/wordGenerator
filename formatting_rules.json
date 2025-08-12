@@ -161,34 +161,25 @@
       }
     },
     "lists": {
-      "simple": {
-        "prefix": "hyphen",
-        "indent": "1.25cm",
-        "markerSpacing": "nonBreakingSpace",
-        "punctuation": "semicolon",
-        "finalPunctuation": "period",
-        "case": "lowercase"
-      },
-      "complex": {
-        "level1": {
-          "prefix": "lowercaseRussianLetter",
-          "excludeLetters": ["ё", "й", "з", "о", "ъ", "ы", "ь"],
-          "suffix": ")",
-          "indent": "1.25cm",
-          "markerSpacing": "nonBreakingSpace",
-          "punctuation": "semicolon",
-          "finalPunctuation": "period",
-          "case": "lowercase"
-        },
-        "level2": {
-          "prefix": "arabicNumber",
-          "suffix": ")",
-          "indent": "relative",
-          "markerSpacing": "nonBreakingSpace",
-          "punctuation": "semicolon",
-          "finalPunctuation": "period",
-          "case": "lowercase"
-        }
+       "first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+        "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "first_line":1.25
+      
       }
     },
     "formulas": {

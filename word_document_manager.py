@@ -61,37 +61,58 @@ class WordDocumentManager:
     def _update_element_word(self, element: Element):
         if isinstance(element, Header):
             element.docx_element.runs[0].text = element.text
-            # from docx.shared import Pt, RGBColor
-            # for run in element.docx_element.runs:
-            #     # Change font properties
-            #     run.font.name = 'Arial'  # Font family
-            #     run.font.size = Pt(14)   # Font size (for level=1, adjust as needed)
-            #     run.font.bold = True     # Bold
-            #     run.font.italic = False # No italic
-            #     run.font.color.rgb = RGBColor(255, 0, 0) 
         elif isinstance(element, Paragraph):
             element.docx_element.runs[0].text=element.text
         elif isinstance(element, ListElement):
-        # 1. Удаляем старые параграфы из документа
+            # Получаем все существующие параграфы элемента
             old_paragraphs = element.docx_elements.copy()
-
-            # Очищаем список (но параграфы пока остаются в документе)
+            
+            # Очищаем список параграфов элемента (но физически они остаются в документе)
             element.docx_elements.clear()
-
-            # Добавляем новые параграфы после последнего старого параграфа
-            if old_paragraphs:
-                insert_position = old_paragraphs[-1]._element
-                parent_element = insert_position.getparent()
-                insert_index = parent_element.index(insert_position) + 1
-                for item in element.items:
-                    new_paragraph = self.doc.add_paragraph(item)
-                    parent_element.insert(insert_index, new_paragraph._element)
-                    element.docx_elements.append(new_paragraph)
-                    insert_index += 1
-                            
-            for paragraph in old_paragraphs:
-                if paragraph._p is not None:
-                    paragraph._p.getparent().remove(paragraph._p)
+            
+            # Для вставки новых элементов будем использовать последний обработанный параграф
+            last_paragraph = None
+            
+            # Обрабатываем все элементы (старые и новые)
+            for i, item in enumerate(element.items):
+                if i < len(old_paragraphs):
+                    # Обновляем существующий параграф
+                    paragraph = old_paragraphs[i]
+                    # Очищаем все runs и добавляем новый текст
+                    for run in paragraph.runs:
+                        run.text = ""
+                    if paragraph.runs:
+                        paragraph.runs[0].text = item
+                    else:
+                        paragraph.add_run(item)
+                    last_paragraph = paragraph
+                    element.docx_elements.append(paragraph)
+                else:
+                    # Добавляем новый параграф
+                    if last_paragraph is not None:
+                        # Вставляем после последнего обработанного параграфа
+                        insert_position = last_paragraph._element
+                        parent_element = insert_position.getparent()
+                        insert_index = parent_element.index(insert_position) + 1
+                        
+                        new_paragraph = self.doc.add_paragraph(item)
+                        parent_element.insert(insert_index, new_paragraph._element)
+                        element.docx_elements.append(new_paragraph)
+                        self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
+                        last_paragraph = new_paragraph
+                    else:
+                        # Если не было старых параграфов вообще
+                        new_paragraph = self.doc.add_paragraph(item)
+                        self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
+                        element.docx_elements.append(new_paragraph)
+                        last_paragraph = new_paragraph
+            
+            # Удаляем лишние старые параграфы, если новых элементов меньше
+            if len(element.items) < len(old_paragraphs):
+                for i in range(len(element.items), len(old_paragraphs)):
+                    paragraph = old_paragraphs[i]
+                    if paragraph._p is not None:
+                        paragraph._p.getparent().remove(paragraph._p)
         elif isinstance(element, Image):
             if element.docx_image_paragraph is not None:
                 # Получаем первый run (где хранится изображение)
@@ -612,8 +633,8 @@ class WordDocumentManager:
         #     self.style_manager.apply_listing_style(element)
         elif isinstance(element, Paragraph):
             self.style_manager.apply_paragraph_style(element)
-        # elif isinstance(element, ListElement):
-        #     self.style_manager.apply_list_style(element)
+        elif isinstance(element, ListElement):
+            self.style_manager.apply_list_style(element)
 
  
     def _create_omath_element(self, formula: str):
@@ -847,8 +868,8 @@ if __name__ == "__main__":
     doc_manager.add_element(new_header10,Paragraph(" ndskm"))
     doc_manager.update_element(new_header4, Header(1,'ну я хитрееее тебя 333проверка го гого'))
     doc_manager.update_element(dkjsad2, Paragraph("но вот и все par updated"))
-    doc_manager.update_element(lodsds, ListElement(['как-то так;','пися231;','ага.'],'–'))
-    doc_manager.update_element(lodsds, ListElement(['dsadasd','как-то так;','пися231;','ага.'],'–'))
+    doc_manager.update_element(lodsds, ListElement(['как-то так;','пися231.'],'–'))
+    doc_manager.update_element(lodsds, ListElement(['dsadasd;','как-то так;','пися231;','ага.'],'–'))
     doc_manager.update_element (new_image3d21, Image(image_data=image_data1, caption="red one Новое изображение"))
     doc_manager.update_element (tab23, Table([["1","1"],["2","2"],["3","3"]],"Fracation table"))
     ds32 = Table([["01","1"],["02","2"],["3","3"]]," n ni niFracation table")

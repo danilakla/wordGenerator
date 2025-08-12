@@ -163,6 +163,18 @@ class StyleManager:
 
 
     def apply_list_style(self, list_element: ListElement):
-        style_name = "List Bullet" if list_element.list_type == "unordered" else "List Number"
-        for para in list_element.docx_elements:
-            para.style = style_name
+        for list_item in list_element.docx_elements:
+            for run in list_item.runs:
+                run.font.name = self.config_service.get("documentFormatting.lists.family")  
+                run.font.size = Pt(self.config_service.get("documentFormatting.lists.size"))   
+                run.font.bold = self.config_service.get("documentFormatting.lists.style.bold")       
+                run.font.italic = self.config_service.get("documentFormatting.lists.style.italic")  
+                run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.lists.color")] 
+
+            paragraph_format  = list_item.paragraph_format
+            paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.lists.lineSpacing", 0)]
+            paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_left", 0))      
+            paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_right", 0))   
+            paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.lists.paragraph_format.first_line", 0))
+            paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingBefore", 0))  # Space before paragraph
+            paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingAfter", 0))
