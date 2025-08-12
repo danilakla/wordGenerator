@@ -139,11 +139,12 @@ class WordDocumentManager:
             
             # Создаем новую таблицу
             new_table = self.doc.add_table(rows=len(element.data), cols=len(element.data[0]))
-            
+            new_table.style=old_table.style
             # Заполняем новую таблицу данными
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
-                    new_table.cell(i, j).text = cell
+                   new_cell = new_table.cell(i, j).text = cell
+                   
             
             insert_position = old_table._element
             
@@ -154,7 +155,7 @@ class WordDocumentManager:
                 old_table._tbl.getparent().remove(old_table._tbl)            
             # Обновляем ссылку на таблицу в элементе
             element.docx_table = new_table
-            element.docx_caption_paragraph.text=element.caption
+            element.docx_caption_paragraph.runs[0].text=element.caption
             
         elif isinstance(element, Formula):
             if element.docx_element is not None:
@@ -164,14 +165,14 @@ class WordDocumentManager:
                 # --- Update formula in cell(0, 1) ---
                 formula_cell = table.cell(0, 1)
                 formula_para = formula_cell.paragraphs[0]
-                formula_para.clear()  # Custom helper needed — python-docx has no built-in clear
-                formula_run = formula_para.add_run()
-                formula_run._element.append(self.formula_meneger._create_omath_element(element.formula))
+                # formula_para.clear()  # Custom helper needed — python-docx has no built-in clear
+                # formula_run = formula_para.add_run()
+                formula_para.runs[0]._element.append(self.formula_meneger._create_omath_element(element.formula))
         
                 # --- Update caption in cell(0, 2) ---
                 caption_cell = table.cell(0, 2)
                 caption_para = caption_cell.paragraphs[0]
-                caption_para.text = f"{element.caption}"
+                caption_para.runs[0].text = f"{element.caption}"
             
             
         elif isinstance(element, Listing):
@@ -326,29 +327,22 @@ class WordDocumentManager:
                 for j, cell in enumerate(row):
                     element.docx_table.rows[i].cells[j].text = cell
         elif isinstance(element, Formula):
-            from docx.enum.text import WD_ALIGN_PARAGRAPH
 
             # Create table with 1 row and 3 columns
             table = self.doc.add_table(rows=1, cols=3)
 
             # Remove borders if you don't want them
-            for row in table.rows:
-                for cell in row.cells:
-                    for para in cell.paragraphs:
-                        para.paragraph_format.space_after = 0
-                        para.paragraph_format.space_before = 0
+  
 
             # Column 2 (index 1) - formula centered
             formula_cell = table.cell(0, 1)
             formula_para = formula_cell.paragraphs[0]
-            formula_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             formula_run = formula_para.add_run()
             formula_run._element.append(self.formula_meneger._create_omath_element(element.formula))
 
             # Column 3 (index 2) - caption right-aligned
             caption_cell = table.cell(0, 2)
             caption_para = caption_cell.paragraphs[0]
-            caption_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
             caption_para.text=(f"{element.caption}")
 
             # Save table reference if needed
@@ -627,8 +621,8 @@ class WordDocumentManager:
             self.style_manager.apply_image_style(element)
         # elif isinstance(element, Table):
         #     self.style_manager.apply_table_style(element)
-        # elif isinstance(element, Formula):
-        #     self.style_manager.apply_formula_style(element)
+        elif isinstance(element, Formula):
+            self.style_manager.apply_formula_style(element)
         # elif isinstance(element, Listing):
         #     self.style_manager.apply_listing_style(element)
         elif isinstance(element, Paragraph):

@@ -8,8 +8,10 @@ from neighbor_finder import NeighborFinder
 from docx import Document
 from docx.shared import Pt, RGBColor,Inches
 from docx.enum.dml import MSO_THEME_COLOR
-from docx.enum.text import WD_LINE_SPACING
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH,WD_PARAGRAPH_ALIGNMENT,WD_LINE_SPACING
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 NeighborFinder
 class StyleManager:
     
@@ -40,6 +42,21 @@ class StyleManager:
     "justify": WD_ALIGN_PARAGRAPH.JUSTIFY
     # Add more as needed
 }
+        
+        self.WD_PARAGRAPH_ALIGNMENT_MAP = {
+    "center":WD_PARAGRAPH_ALIGNMENT.CENTER,
+    "left": WD_PARAGRAPH_ALIGNMENT.LEFT,
+    "right": WD_PARAGRAPH_ALIGNMENT.RIGHT,
+    "justify": WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+    # Add more as needed
+}
+        self.WD_CELL_VERTICAL_ALIGNMENT_MAP = {
+    "center":WD_CELL_VERTICAL_ALIGNMENT.CENTER,
+    "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
+    "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
+    "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
+    # Add more as needed
+}
         self.config_service = ConfigService("formatting_rules.json")
         self.neighbor_finder=NeighborFinder(self.tree)
         self.doc = doc
@@ -48,28 +65,18 @@ class StyleManager:
 
     def _ensure_styles(self):
         """Ensures required styles exist in the document."""
-        styles = self.doc.styles
+        settings = self.doc.settings
+        math_pr = settings.element.find(qn('w:mathPr'))
+        if math_pr is None:
+            math_pr = OxmlElement('w:mathPr')
+            settings.element.append(math_pr)
 
-# Устанавливаем разрыв страницы перед каждым таким заголовком
-        # style_definitions = [
-        #     ("Caption", WD_STYLE_TYPE.PARAGRAPH, "Caption", {"font_size": 9, "italic": True}),
-        #     ("Listing", WD_STYLE_TYPE.PARAGRAPH, "Normal", {"font_name": "Courier New", "font_size": 10}),
-        #     ("List Bullet", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard unordered list style
-        #     ("List Number", WD_STYLE_TYPE.PARAGRAPH, None, {}),  # Standard ordered list style
-        # ]
+        math_font = math_pr.find(qn('m:mathFont'))
+        if math_font is None:
+            math_font = OxmlElement('m:mathFont')
+            math_pr.append(math_font)
 
-        # for style_name, style_type, base_style, properties in style_definitions:
-        #     if style_name not in styles:
-        #         style = styles.add_style(style_name, style_type)
-        #         if base_style and base_style in styles:
-        #             style.base_style = styles[base_style]
-        #         for prop, value in properties.items():
-        #             if prop == "font_size":
-        #                 style.font.size = int(value * 12700)  # Convert points to EMU (1 pt = 12700 EMU)
-        #             elif prop == "font_name":
-        #                 style.font.name = value
-        #             elif prop == "italic":
-        #                 style.font.italic = value
+        math_font.set(qn('m:val'), "XITS Math")
     def cm_to_pt(self,cm):
         """Конвертирует сантиметры в пункты (1 см ≈ 28.35 pt)."""
         return Pt(cm * 28.3464567)
@@ -133,10 +140,57 @@ class StyleManager:
             table.docx_caption_paragraph.style = "Caption"
 
     def apply_formula_style(self, formula: Formula):
-        if formula.docx_element:
-            formula.docx_element.style = "Normal"
-        if formula.docx_caption_paragraph:
-            formula.docx_caption_paragraph.style = "Caption"
+        
+        table = formula.docx_element
+        
+                # --- Update formula in cell(0, 1) ---
+        formula_cell = table.cell(0, 1)
+       
+        
+        for run in  formula_cell.paragraphs[0].runs:
+            # run.font.name = self.config_service.get("documentFormatting.formulas.family")  
+            run.font.size = Pt(self.config_service.get("documentFormatting.formulas.size"))   
+            run.font.bold = self.config_service.get("documentFormatting.formulas.style.bold")       
+            run.font.italic = self.config_service.get("documentFormatting.formulas.style.italic")  
+            run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.formulas.color")] 
+        paragraph_format  = formula_cell.paragraphs[0].paragraph_format
+        paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.formulas.lineSpacing", 0)]
+        paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.indent_left", 0))      
+        paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.indent_right", 0))   
+        paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.formulas.paragraph_format.first_line", 0))
+        paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.spacingBefore", 0))  # Space before paragraph
+        paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.spacingAfter", 0))
+        # --- Update caption in cell(0, 2) ---
+        formula_cell.paragraphs[0].alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.formulas.first.alignment", 0)]
+        formula_cell.vertical_alignment =self.WD_CELL_VERTICAL_ALIGNMENT_MAP[self.config_service.get("documentFormatting.formulas.first.vertical", 0)]  
+        
+        caption_cell = table.cell(0, 2)
+        for run in  caption_cell.paragraphs[0].runs:
+            run.font.name = self.config_service.get("documentFormatting.formulas.family")  
+            run.font.size = Pt(self.config_service.get("documentFormatting.formulas.size"))   
+            run.font.bold = self.config_service.get("documentFormatting.formulas.style.bold")       
+            run.font.italic = self.config_service.get("documentFormatting.formulas.style.italic")  
+            run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.formulas.color")] 
+        paragraph_format  = caption_cell.paragraphs[0].paragraph_format 
+        caption_cell.paragraphs[0].alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.formulas.second.alignment", 0)]
+        caption_cell.vertical_alignment =self.WD_CELL_VERTICAL_ALIGNMENT_MAP[self.config_service.get("documentFormatting.formulas.second.vertical", 0)]  
+        paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.formulas.lineSpacing", 0)]
+        paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.indent_left", 0))      
+        paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.indent_right", 0))   
+        paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.formulas.paragraph_format.first_line", 0))
+        paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.spacingBefore", 0))  # Space before paragraph
+        paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.formulas.paragraph_format.spacingAfter", 0))
+        section = self.doc.sections[0]
+        page_width = section.page_width - section.left_margin - section.right_margin
+        table.width = page_width
+
+        table.autofit = False  # Фиксированные ширины
+        table.allow_autofit = False
+        table.columns[0].cells[0].width = int(page_width * 0.1)
+        table.columns[1].cells[0].width = int(page_width * 0.8)
+        table.columns[2].cells[0].width =int( page_width * 0.1)
+
+            
 
     def apply_listing_style(self, listing: Listing):
         for para in listing.docx_listing_paragraphs:

@@ -183,14 +183,39 @@
       }
     },
     "formulas": {
+
+"first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
       "numbering": {
         "format": "{sectionNumber}.{itemNumber}",
         "position": "left"
       },
+      "first":{
       "alignment": "center",
-      "spacing": {
-        "before": "14pt",
-        "after": "14pt"
+        "vertical":"center"
+      },
+      "second":{
+      "alignment": "right",
+        "vertical":"center"
+
+      },
+      "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 12,
+        "spacingBefore": 12,
+        "first_line":0
+      
       },
       "symbols": {
         "multiplication": "middleDot",

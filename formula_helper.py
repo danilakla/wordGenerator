@@ -20,6 +20,7 @@ class FormulaHelper:
         mathml_tree = etree.fromstring(mathml.encode("utf-8"))
         omml_tree = self.transform(mathml_tree)
 
+        
         # 3. Преобразуем в XML-элемент python-docx
         omml_element = parse_xml(etree.tostring(omml_tree.getroot()))
         return omml_element
