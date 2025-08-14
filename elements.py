@@ -1,12 +1,9 @@
 from dataclasses import dataclass, field
-import re
 from typing import List, Optional
-from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.table import Table as DocxTable
-from docx.oxml.ns import qn, nsmap
-from lxml import etree
-
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 
 class Element:
     pass
@@ -26,7 +23,6 @@ class Paragraph(Element):
     text: str
     docx_element: Optional[DocxParagraph] = None
 
-# Список
 # Список
 @dataclass
 class ListElement(Element):
@@ -51,11 +47,15 @@ class Image(Element):
     docx_image_paragraph: Optional[DocxParagraph] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None
     text_number_of_element: str = ""
-
+@dataclass
+class DataTable:
+    data:str
+    horizontal:WD_PARAGRAPH_ALIGNMENT
+    vertical:WD_CELL_VERTICAL_ALIGNMENT
 # Таблица
 @dataclass
 class Table(Element):
-    data: List[List[str]]
+    data: List[List[DataTable]]
     caption: str
     docx_table: Optional[DocxTable] = None
     docx_caption_paragraph: Optional[DocxParagraph] = None

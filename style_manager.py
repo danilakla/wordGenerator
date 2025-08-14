@@ -134,10 +134,112 @@ class StyleManager:
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.figures.spacingAfter", 0))
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.figures.alignment", 0)]
     def apply_table_style(self, table: Table):
-        if table.docx_table:
-            table.docx_table.style = "Table Grid"
-        if table.docx_caption_paragraph:
-            table.docx_caption_paragraph.style = "Caption"
+        section = self.doc.sections[0]
+        page_width = section.page_width - section.left_margin - section.right_margin
+        tb_l=table.docx_table
+        tb_l.width = page_width
+
+        tb_l.autofit = False  # Фиксированные ширины
+        tb_l.allow_autofit = False
+        for run in table.docx_caption_paragraph.runs:
+            run.font.name = self.config_service.get("documentFormatting.tables.caption.family")  
+            run.font.size = Pt(self.config_service.get("documentFormatting.tables.caption.size"))   
+            run.font.bold = self.config_service.get("documentFormatting.tables.caption.bold")       
+            run.font.italic = self.config_service.get("documentFormatting.tables.caption.style.italic")  
+            run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.caption.color")] 
+        paragraph_format  = table.docx_caption_paragraph.paragraph_format
+
+        paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.tables.caption.paragraph_format.line_sp", 0)]
+        paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.indent_left", 0))      
+        paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.indent_right", 0))   
+        paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.first_line", 0))
+        paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.spacingBefore", 0))  # Space before paragraph
+        paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.spacingAfter", 0))
+
+        paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.tables.caption.paragraph_format.alignment", 0)]
+
+
+        for row, text_row in zip(table.docx_table.rows, table.data):
+            for cell, cell_object_tab in zip(row.cells, text_row):
+                run = cell.paragraphs[0].runs[0]
+                run.font.name = self.config_service.get("documentFormatting.tables.family")  
+                run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
+                run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
+                run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
+                run.font.color.rgb = self.COLOR_MAP["green"] 
+                # run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")] 
+                paragraph_format  = cell.paragraphs[0].paragraph_format
+
+                paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.tables.paragraph_format.line_sp", 0)]
+                paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.indent_left", 0))      
+                paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.indent_right", 0))   
+                paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.tables.paragraph_format.first_line", 0))
+                paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.spacingBefore", 0))  # Space before paragraph
+                paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.spacingAfter", 0))
+                paragraph_format.alignment=cell_object_tab.horizontal
+                cell.vertical_alignment= cell_object_tab.vertical
+                border_style = {
+                    'top': {'val': 'single', 'sz': '4', 'color': '000000'},
+                    'left': {'val': 'single', 'sz': '4', 'color': '000000'},
+                    'bottom': {'val': 'single', 'sz': '4', 'color': '000000'},
+                    'right': {'val': 'single', 'sz': '4', 'color': '000000'}}
+
+                self.set_cell_border(cell,border_style)
+    def set_cell_border(self,cell, border_settings):
+        """Устанавливает границы для одной ячейки."""
+        tc = cell._tc
+        tcPr = tc.get_or_add_tcPr()
+        tcBorders = OxmlElement('w:tcBorders')
+
+        for edge in border_settings:
+            element = OxmlElement(f'w:{edge}')
+            for key, value in border_settings[edge].items():
+                element.set(qn(f'w:{key}'), str(value))
+            tcBorders.append(element)
+
+        tcPr.append(tcBorders)
+    def apply_update_table_style(self, cells,table):
+       
+        table.autofit = False
+
+        # Access the table XML element
+        tbl = table._tbl
+        tbl_pr = tbl.tblPr
+
+        # Remove any existing tblW element
+        existing_tblW = tbl_pr.xpath('./w:tblW')
+        if existing_tblW:
+            tbl_pr.remove(existing_tblW[0])
+
+        # Create and append new tblW for 100% width (pct type, 5000 = 100%)
+        tblW = OxmlElement('w:tblW')
+        tblW.set(qn('w:type'), 'pct')
+        tblW.set(qn('w:w'), '5000')
+        tbl_pr.append(tblW)
+        if cells:
+            for cell in cells:
+                for run in cell.paragraphs[0].runs:
+                    run.font.name = self.config_service.get("documentFormatting.tables.family")  
+                    run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
+                    run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
+                    run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
+                    run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")] 
+                    paragraph_format  = cell.paragraphs[0].paragraph_format
+    
+                    paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.tables.paragraph_format.line_sp", 0)]
+                    paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.indent_left", 0))      
+                    paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.indent_right", 0))   
+                    paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.tables.paragraph_format.first_line", 0))
+                    paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.spacingBefore", 0))  # Space before paragraph
+                    paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.tables.paragraph_format.spacingAfter", 0))
+                    border_style = {
+                        'top': {'val': 'single', 'sz': '4', 'color': '000000'},
+                        'left': {'val': 'single', 'sz': '4', 'color': '000000'},
+                        'bottom': {'val': 'single', 'sz': '4', 'color': '000000'},
+                        'right': {'val': 'single', 'sz': '4', 'color': '000000'}}
+    
+                    self.set_cell_border(cell,border_style)
+
 
     def apply_formula_style(self, formula: Formula):
         
@@ -193,10 +295,52 @@ class StyleManager:
             
 
     def apply_listing_style(self, listing: Listing):
-        for para in listing.docx_listing_paragraphs:
-            para.style = "Listing"
-        if listing.docx_caption_paragraph:
-            listing.docx_caption_paragraph.style = "Caption"
+        for run in listing.docx_caption_paragraph.runs:
+            run.font.name = self.config_service.get("documentFormatting.listings.caption.family")  
+            run.font.size = Pt(self.config_service.get("documentFormatting.listings.caption.size"))   
+            run.font.bold = self.config_service.get("documentFormatting.listings.caption.style.bold")       
+            run.font.italic = self.config_service.get("documentFormatting.listings.caption.style.italic")  
+            run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.listings.caption.color")]
+
+        paragraph_format  = listing.docx_caption_paragraph.paragraph_format
+        paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.listings.caption.lineSpacing", 0)]
+        paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_left", 0))      
+        paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_right", 0))   
+        paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.listings.paragraph_format.first_line", 0))
+        paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.listings.caption.spacingBefore", 0))  # Space before paragraph
+        paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.listings.caption.spacingAfter", 0))
+        paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.listings.caption.alignment", 0)]
+
+        for list_item in listing.docx_listing_paragraphs:
+            for run in list_item.runs:
+                run.font.name = self.config_service.get("documentFormatting.listings.family")  
+                run.font.size = Pt(self.config_service.get("documentFormatting.listings.size"))   
+                run.font.bold = self.config_service.get("documentFormatting.listings.style.bold")       
+                run.font.italic = self.config_service.get("documentFormatting.listings.style.italic")  
+                run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.listings.color")] 
+
+            paragraph_format  = list_item.paragraph_format
+            paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.listings.lineSpacing", 0)]
+            paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_left", 0))      
+            paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_right", 0))   
+            paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.listings.paragraph_format.first_line", 0))
+            paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.spacingBefore", 0))  # Space before paragraph
+            paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.spacingAfter", 0))
+
+        p_bdr = OxmlElement('w:pBdr')  # Создаем элемент границ
+            
+        for paragraph in listing.docx_listing_paragraphs :
+            p_pr = paragraph._element.get_or_add_pPr()
+            p_bdr = OxmlElement('w:pBdr')
+            for border_name in ['top', 'left', 'bottom', 'right']:
+                border = OxmlElement(f'w:{border_name}')
+                border.set(qn('w:val'), 'single')  # Тип линии
+                border.set(qn('w:sz'), '4')         # Толщина (0.5 pt)
+                border.set(qn('w:space'), '4')      # Отступ от текста
+                border.set(qn('w:color'), '000000') # Цвет (#000000)
+                p_bdr.append(border)
+
+        p_pr.append(p_bdr)
 
     def apply_paragraph_style(self, paragraph: Paragraph):
         for run in paragraph.docx_element.runs:
@@ -213,6 +357,7 @@ class StyleManager:
         paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.first_line", 0))
         paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBefore", 0))  # Space before paragraph
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingAfter", 0))
+        paragraph_format.alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.paragraph.paragraph_format.alignment", 0)]
           
 
 
@@ -232,3 +377,4 @@ class StyleManager:
             paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.lists.paragraph_format.first_line", 0))
             paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingBefore", 0))  # Space before paragraph
             paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingAfter", 0))
+            paragraph_format.alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.paragraph.paragraph_format.alignment", 0)]

@@ -1,6 +1,6 @@
 import re
 from typing import List
-from elements import ListElement, Paragraph, UndefinedElement
+from elements import DataTable, ListElement, Paragraph, UndefinedElement
 from elements import Element, Formula, Header, Image, Listing, Table
 import re
 from docx import Document
@@ -303,7 +303,17 @@ def parse_document(doc_path):
                 else: 
                     caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
                     pending_table_caption = None
-                    data = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+                    data = [
+                            [
+                                DataTable(
+                                    data=cell.text.strip(),
+                                    horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
+                                    vertical=cell.vertical_alignment
+                                ) 
+                                for cell in row.cells
+                            ] 
+                            for row in table.rows
+                        ]
                     parent = stack[-1]
                     parent.append(Table(data, caption, table, caption_paragraph, ""))
             else:
@@ -338,7 +348,7 @@ def print_tree(elements, indent=0, prefix=""):
             content = f"Image ({elem.text_number_of_element}): {elem.caption[:44] if elem.caption else 'No caption'} ({image_size})"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Table):
-            first_cell = elem.data[0][0][:41] if elem.data and elem.data[0] else 'No data'
+            first_cell = elem.data[0][0].data[:41] if elem.data and elem.data[0] else 'No data'
             content = f"Table ({elem.text_number_of_element}, {len(elem.data)} rows): {elem.caption[:35] if elem.caption else 'No caption'}, {first_cell}"
             content = content[:50] + '...' if len(content) > 50 else content
         elif isinstance(elem, Formula):

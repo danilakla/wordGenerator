@@ -1,8 +1,8 @@
 
-from typing import  Optional
+from typing import  List, Optional
 from docx import Document
 from docx.text.paragraph import Paragraph 
-from elements import Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
+from elements import DataTable, Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
 from formula_helper import FormulaHelper
 from maind import print_tree
 from style_manager import StyleManager
@@ -134,28 +134,94 @@ class WordDocumentManager:
                         run.add_picture(BytesIO(img_byte_arr.getvalue()))
             element.docx_caption_paragraph.runs[0].text = element.caption
         elif isinstance(element, Table):
-            # Сохраняем ссылку на старую таблицу
-            old_table = element.docx_table
-            
-            # Создаем новую таблицу
-            new_table = self.doc.add_table(rows=len(element.data), cols=len(element.data[0]))
-            new_table.style=old_table.style
-            # Заполняем новую таблицу данными
-            for i, row in enumerate(element.data):
-                for j, cell in enumerate(row):
-                   new_cell = new_table.cell(i, j).text = cell
-                   
-            
-            insert_position = old_table._element
-            
-            parent_element = insert_position.getparent()
-            insert_index = parent_element.index(insert_position)+1
-            parent_element.insert(insert_index,new_table._element)
-            if old_table is not None and old_table._tbl is not None:
-                old_table._tbl.getparent().remove(old_table._tbl)            
-            # Обновляем ссылку на таблицу в элементе
-            element.docx_table = new_table
-            element.docx_caption_paragraph.runs[0].text=element.caption
+            from docx.oxml import OxmlElement
+            docx_table = element.docx_table
+            data = element.data
+            new_cells: List = []
+            from docx.oxml.ns import qn
+            # Assume data is rectangular
+            new_rows = len(data)
+            new_cols = len(data[0]) if new_rows > 0 else 0
+        
+            old_rows = len(docx_table.rows)
+            old_cols = len(docx_table.columns) if old_rows > 0 else 0
+            tbl_grid = docx_table._tbl.tblGrid
+            existing_widths = [int(grid_col.get(qn('w:w'), 0)) for grid_col in tbl_grid.xpath('./w:gridCol')]
+            default_width = 1440  # Default width: 1 inch (1440 twips)
+            proportional_width = int(sum(existing_widths) / len(existing_widths)) if existing_widths else default_width
+            # Adjust columns using oxml for reliability
+            if new_cols > old_cols:
+                for _ in range(new_cols - old_cols):
+                    # Add column to table grid
+                    tbl_grid = docx_table._tbl.tblGrid
+                    grid_col = OxmlElement('w:gridCol')
+                    grid_col.set(qn('w:w'), str(proportional_width))
+                    tbl_grid.append(grid_col)
+                    # Add cell to each row
+                    for row in docx_table.rows:
+                        tc = OxmlElement('w:tc')
+                        tc.append(OxmlElement('w:p'))  # Add paragraph to new cell
+                        row._tr.append(tc)
+                        new_cells.append(row.cells[-1])  # Track new cell
+            elif new_cols < old_cols:
+                for _ in range(old_cols - new_cols):
+                    # Remove last column
+                    for row in docx_table.rows:
+                        row._tr.remove(row.cells[-1]._tc)
+                    # Remove last grid column
+                    tbl_grid = docx_table._tbl.tblGrid
+                    tbl_grid.remove(tbl_grid[-1])
+        
+            # Adjust rows
+            if new_rows > old_rows:
+                for _ in range(new_rows - old_rows):
+                    new_row = docx_table.add_row()
+                    new_cells.extend(new_row.cells)  # Track all cells in new row
+            elif new_rows < old_rows:
+                for _ in range(old_rows - new_rows):
+                    docx_table._tbl.remove(docx_table.rows[-1]._tr)
+        
+            # Ensure table grid matches new_cols
+            tbl_grid = docx_table._tbl.tblGrid
+            current_grid_cols = len(tbl_grid)
+            if current_grid_cols < new_cols:
+                for _ in range(new_cols - current_grid_cols):
+                    grid_col = OxmlElement('w:gridCol')
+                    grid_col.set(qn('w:w'), str(proportional_width))
+                    tbl_grid.append(grid_col)
+            elif current_grid_cols > new_cols:
+                for _ in range(current_grid_cols - new_cols):
+                    tbl_grid.remove(tbl_grid[-1])
+        
+            # Update cell contents
+            for i in range(new_rows):
+                for j in range(new_cols):
+                    try:
+                        cell = docx_table.cell(i, j)
+                    except IndexError:
+                        # If cell access fails, table structure may still be inconsistent
+                        raise IndexError(f"Cannot access cell ({i}, {j}). Table structure is inconsistent. Rows: {len(docx_table.rows)}, Cols: {len(docx_table.columns)}")
+        
+                    dat = data[i][j]
+                    # Update text
+                    if cell.paragraphs[0].runs:
+                        cell.paragraphs[0].runs[0].text = dat.data
+                    elif cell.paragraphs:
+                        cell.paragraphs[0].text = dat.data
+                    else:
+                        cell.add_paragraph(dat.data)
+        
+                    # Apply alignments only to new cells
+                    if cell in new_cells:
+                        cell.paragraphs[0].alignment = dat.horizontal
+                        cell.vertical_alignment = dat.vertical
+
+
+            # Применяем стили к новым ячейкам
+            if new_cells:  # Проверяем, что есть новые ячейки
+                self.style_manager.apply_update_table_style(new_cells,element.docx_table)
+
+            element.docx_caption_paragraph.runs[0].text = element.caption
             
         elif isinstance(element, Formula):
             if element.docx_element is not None:
@@ -176,47 +242,9 @@ class WordDocumentManager:
             
             
         elif isinstance(element, Listing):
-            from docx.oxml import OxmlElement
-            from docx.oxml.ns import qn
-
             # Сохраняем старые параграфы
-            old_paragraphs = element.docx_listing_paragraphs.copy()
-
-            # Создаем новые параграфы с рамкой
-            new_paragraphs = []
-            for line in element.text.split('\n'):
-                new_paragraph = self.doc.add_paragraph(line)
-
-                # Настраиваем границы
-                p_pr = new_paragraph._element.get_or_add_pPr()
-                p_bdr = OxmlElement('w:pBdr')
-
-                for border_name in ['top', 'left', 'bottom', 'right']:
-                    border = OxmlElement(f'w:{border_name}')
-                    border.set(qn('w:val'), 'single')
-                    border.set(qn('w:sz'), '4')
-                    border.set(qn('w:space'), '4')
-                    border.set(qn('w:color'), '000000')
-                    p_bdr.append(border)
-
-                p_pr.append(p_bdr)
-                new_paragraphs.append(new_paragraph)
-            # Добавляем новые параграфы после последнего старого параграфа
-            if old_paragraphs:
-                insert_position = old_paragraphs[-1]._element
-                parent_element = insert_position.getparent()
-                insert_index = parent_element.index(insert_position) + 1
-                for new_pr in new_paragraphs:
-                    parent_element.insert(insert_index, new_pr._element)
-                    insert_index += 1
-                            
-            for paragraph in old_paragraphs:
-                if paragraph._p is not None:
-                    paragraph._p.getparent().remove(paragraph._p)
-                    
-                    
-            element.docx_listing_paragraphs = new_paragraphs
-            element.docx_caption_paragraph.text = element.caption
+            element.docx_listing_paragraphs[0].runs[0].text=element.text
+            element.docx_caption_paragraph.runs[0].text = element.caption
     
     def _get_last_nested_element(self, element):
         """
@@ -325,7 +353,7 @@ class WordDocumentManager:
             element.docx_table = self.doc.add_table(rows=len(element.data), cols=len(element.data[0]))
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
-                    element.docx_table.rows[i].cells[j].text = cell
+                    element.docx_table.rows[i].cells[j].text = cell.data
         elif isinstance(element, Formula):
 
             # Create table with 1 row and 3 columns
@@ -352,26 +380,10 @@ class WordDocumentManager:
             
             
         elif isinstance(element, Listing):
-            from docx.oxml import OxmlElement
-            from docx.oxml.ns import qn
-        
-            element.docx_listing_paragraphs = [self.doc.add_paragraph(line) for line in element.text.split('\n')]
+          
+            element.docx_listing_paragraphs = [self.doc.add_paragraph(element.text)]
             element.docx_caption_paragraph = self.doc.add_paragraph(element.caption)
-            p_bdr = OxmlElement('w:pBdr')  # Создаем элемент границ
             
-            for paragraph in element.docx_listing_paragraphs :
-                p_pr = paragraph._element.get_or_add_pPr()
-                p_bdr = OxmlElement('w:pBdr')
-
-                for border_name in ['top', 'left', 'bottom', 'right']:
-                    border = OxmlElement(f'w:{border_name}')
-                    border.set(qn('w:val'), 'single')  # Тип линии
-                    border.set(qn('w:sz'), '4')         # Толщина (0.5 pt)
-                    border.set(qn('w:space'), '4')      # Отступ от текста
-                    border.set(qn('w:color'), '000000') # Цвет (#000000)
-                    p_bdr.append(border)
-
-            p_pr.append(p_bdr)
         # Перемещаем элемент в нужную позицию
         main_element = None
         if hasattr(element, 'docx_table') and element.docx_table:
@@ -619,12 +631,12 @@ class WordDocumentManager:
             self.style_manager.apply_header_style(element)
         elif isinstance(element, Image):
             self.style_manager.apply_image_style(element)
-        # elif isinstance(element, Table):
-        #     self.style_manager.apply_table_style(element)
+        elif isinstance(element, Table):
+            self.style_manager.apply_table_style(element)
         elif isinstance(element, Formula):
             self.style_manager.apply_formula_style(element)
-        # elif isinstance(element, Listing):
-        #     self.style_manager.apply_listing_style(element)
+        elif isinstance(element, Listing):
+            self.style_manager.apply_listing_style(element)
         elif isinstance(element, Paragraph):
             self.style_manager.apply_paragraph_style(element)
         elif isinstance(element, ListElement):
@@ -753,7 +765,10 @@ if __name__ == "__main__":
     from PIL import Image as PILImage
     doc_manager = WordDocumentManager("tst.docx")
     doc_manager.load_document("tst.docx")
-
+    from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
+    from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+    default_horizontal = WD_PARAGRAPH_ALIGNMENT.CENTER
+    default_vertical = WD_CELL_VERTICAL_ALIGNMENT.CENTER
     # Добавление нового заголовка
     new_header = Header(level=1, text="Новый заголовок", children=[])
     doc_manager.add_element(None, new_header)
@@ -821,8 +836,14 @@ if __name__ == "__main__":
     doc_manager.add_element(None,new_header10,new_header6)
     doc_manager.add_element(new_imagdasdedsds321adass2ds,new_image3d21dd)
     lit= Listing("code dskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmaddskdmsakdmad","descriptio of code")    
-    tab23 = Table([["1","21","3"],["4","5","6"]],'описани таблицы офо')
-    tab23e = Table([["1","32321","3"],["4","3213","6"]],'3213описани таблицы офо')
+    tab23 = Table([
+        [DataTable("1", default_horizontal, default_vertical), DataTable("21", default_horizontal, default_vertical), DataTable("3", default_horizontal, default_vertical)],
+        [DataTable("4", default_horizontal, default_vertical), DataTable("5", default_horizontal, default_vertical), DataTable("6", default_horizontal, default_vertical)]
+    ],'описани таблицы офо')
+    tab23e = Table( [
+        [DataTable("1", default_horizontal, default_vertical), DataTable("32321", default_horizontal, default_vertical), DataTable("3", default_horizontal, default_vertical)],
+        [DataTable("4", default_horizontal, default_vertical), DataTable("3213", default_horizontal, default_vertical), DataTable("6", default_horizontal, default_vertical)]
+    ],'3213описани таблицы офо')
     tab23dase = Formula("E=mc^2","dasdas dsa21",None)
     tab2вы3dase = Formula("E=2332mc^2","d32321asdas dsa21",None)
     tab2вы3dasde = Formula("E=233d2mc^2","d32321asdas dsa21",None)
@@ -865,10 +886,34 @@ if __name__ == "__main__":
     doc_manager.update_element(lodsds, ListElement(['как-то так;','пися231.'],'–'))
     doc_manager.update_element(lodsds, ListElement(['dsadasd;','как-то так;','пися231;','ага.'],'–'))
     doc_manager.update_element (new_image3d21, Image(image_data=image_data1, caption="red one Новое изображение"))
-    doc_manager.update_element (tab23, Table([["1","1"],["2","2"],["3","3"]],"Fracation table"))
-    ds32 = Table([["01","1"],["02","2"],["3","3"]]," n ni niFracation table")
+    doc_manager.update_element (tab23, Table([
+        [DataTable("1", default_horizontal, default_vertical), DataTable("1", default_horizontal, default_vertical),DataTable("афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical), DataTable("321увыф афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical)],
+        [DataTable("2", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("вфыв фыв фыв1в2 3", default_horizontal, default_vertical), DataTable("3вфыв  ыфв фыв фыв 1у2ву1 ", default_horizontal, default_vertical)],
+        
+    ],"Fracation table"))
+
+    doc_manager.update_element(tab23, Table([
+        [DataTable("1", default_horizontal, default_vertical), DataTable("1", default_horizontal, default_vertical)],
+        [DataTable("2", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical)],
+        [DataTable("афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical), DataTable("321увыф афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical)]
+    ],"Fracation table"))
+
+    doc_manager.update_element (tab23, Table([
+        [DataTable("1", default_horizontal, default_vertical), DataTable("1", default_horizontal, default_vertical),DataTable("афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical), DataTable("321увыф афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical)],
+        [DataTable("2", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("вфыв фыв фыв1в2 3", default_horizontal, default_vertical), DataTable("3вфыв  ыфв фыв фыв 1у2ву1 ", default_horizontal, default_vertical)],
+        [DataTable("афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical), DataTable("321увыф афыа321321фыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical),DataTable("321увыф афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical),DataTable("321увыф афыафыафыфаф3 афы афыа фыа фы", default_horizontal, default_vertical)]
+
+    ],"Fracation table"))
+    ds32 = Table( [
+        [DataTable("01", default_horizontal, default_vertical), DataTable("1", default_horizontal, default_vertical)],
+        [DataTable("02", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical)],
+        [DataTable("3", default_horizontal, default_vertical), DataTable("3", default_horizontal, default_vertical)]
+    ]," n ni niFracation table")
     doc_manager.add_element(new_header8,ds32)
-    doc_manager.update_element (ds32, Table([["10","10"],["20","20"]],"Fracat32ion table"))
+    doc_manager.update_element (ds32, Table([
+        [DataTable("10", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical)],
+        [DataTable("20", default_horizontal, default_vertical), DataTable("20", default_horizontal, default_vertical)]
+    ],"Fracat32ion table"))
     doc_manager.update_element(tab2вы3dase,Formula(r"\frac{1}{2}-\frac{\frac{10}{20}-}{}=30\begin{bmatrix} 1& 1 &1 1 \\ 1& 1 &1 1 \\ 1& 1 &1 1 \end{bmatrix}",''))
     doc_manager.update_element(lit3,Listing(f"poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'capton new one'))
     doc_manager.update_element(lit,Listing(f"3213123 1321poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas poso smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnasposo smskdmska dmsn dkasjndjkasjdnasjkdnjaksdnajnaskdjnasjkdn kdsna ksdnas",'32capton new one'))
@@ -888,7 +933,17 @@ if __name__ == "__main__":
     doc_manager.add_element(new_header8,new_header105,new_header103)
     doc_manager.add_element(new_header105,Paragraph("new_header105 knodskd skds;kdaskdkasd 412 4214но вот и все par updated"))
     doc_manager.add_element(new_header105,Paragraph("new_header105; j1nj2eeio12e2m21eio dk askdj lkasdно вот и все par updated"))
-
+    doc_manager.add_element(new_header105,Listing(f"""def move_element_word(self, parent: Element, element: Element, after:Element =None):
+        if isinstance(element,Header):
+            self.numberer.adjust_header_levels(parent,element)
+        self.numberer.move_element(parent,element,after)
+        if not isinstance(element,Header) and not isinstance(parent,Header):
+            after=parent
+        if isinstance(element,Header):
+            self._sync_move_to_doc(element,parent,after,element,parent)
+        else:
+            self._sync_move_to_doc(element,parent,after,None,None)""",'cdasdapton new one')
+)
     doc_manager.move_element_word(new_header4,new_header8)
     doc_manager.move_element_word(new_header,new_header8,new_header5)
     # doc_manager.move_element_word(None,new_header8,new_header7)

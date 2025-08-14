@@ -42,7 +42,7 @@
           "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
         },
         "paragraph_format": {
-        "alignment": "left",
+        "alignment": "justify",
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
@@ -92,37 +92,48 @@
       }
     },
     "tables": {
-      "numbering": "{sectionNumber}.{itemNumber} – {Description}",
-      "placement": "afterReference",
-      "title": {
-        "position": "above",
-        "alignment": "left",
-        "indent": "none",
-        "spacingBefore": "14pt"
-      },
-      "font": {
+    "caption":{
+      "first_line": 0,
         "family": "Times New Roman",
-        "size": "14pt"
-      },
-      "alignment": {
-        "header": "center",
-        "firstColumn": "left",
-        "otherColumns": "center"
-      },
-      "spacingAfter": "14pt",
-      "continuation": {
-        "label": "Continuation of Table {number}",
-        "columnNumbering": "inherit"
-      },
-      "restrictions": {
-        "noSplitTitle": true,
-        "noSplitHeader": true,
-        "noSectionEnd": true
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 0,
+        "spacingBefore": 14,
+        "first_line":0
+      }
+    },
+      "first_line": 0,
+        "family": "Times New Roman",
+        "size": 12,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "paragraph_format": {
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "first_line":0
       }
     },
     "figures": {
 
-        "first_line": 1.25,
+        "first_line":0,
         "family": "Times New Roman",
         "size": 14,
         "lineSpacing": "single",
@@ -171,7 +182,7 @@
           "italic":false
          },
         "paragraph_format": {
-        "alignment": "left",
+        "alignment": "justify",
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
@@ -184,7 +195,7 @@
     },
     "formulas": {
 
-"first_line": 1.25,
+"first_line": 0,
         "family": "Times New Roman",
         "size": 14,
         "lineSpacing": "single",
@@ -234,10 +245,37 @@
       }
     },
     "listings": {
-      "font": {
+     "first_line": 0,
         "family": "Courier New",
-        "size": "12pt",
-        "lineSpacing": "single"
+        "size": 12,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "caption":{  
+            "alignment": "center",
+            "spacingAfter": 14,
+        "spacingBefore": 6,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "single",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         }},
+          "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"single",
+        "spacingAfter": 0,
+        "spacingBefore": 14,
+        "first_line":0
+      
       },
       "frame": true,
       "numbering": "Листинг {sectionNumber}.{itemNumber} – {Description}",
