@@ -133,6 +133,38 @@ class StyleManager:
         paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.figures.spacingBefore", 0))  # Space before paragraph
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.figures.spacingAfter", 0))
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.figures.alignment", 0)]
+    def copy_paragraph_format(target_paragraph, source_paragraph):
+        """
+        Copies all paragraph formatting properties from source_paragraph to target_paragraph.
+        
+        Args:
+            target_paragraph: The paragraph to be formatted (will be modified)
+            source_paragraph: The paragraph to copy formatting from
+        """
+        # Get paragraph format objects
+        target_format = target_paragraph.paragraph_format
+        source_format = source_paragraph.paragraph_format
+        
+        # Alignment
+        target_format.alignment = source_format.alignment
+        
+        # Indentation
+        target_format.left_indent = source_format.left_indent
+        target_format.right_indent = source_format.right_indent
+        target_format.first_line_indent = source_format.first_line_indent
+        target_format.hanging = source_format.hanging
+        
+        # Spacing
+        target_format.space_before = source_format.space_before
+        target_format.space_after = source_format.space_after
+        target_format.line_spacing = source_format.line_spacing
+        target_format.line_spacing_rule = source_format.line_spacing_rule
+        
+        # Keep properties
+        target_format.keep_together = source_format.keep_together
+        target_format.keep_with_next = source_format.keep_with_next
+        target_format.page_break_before = source_format.page_break_before
+        target_format.widow_control = source_format.widow_control
     def apply_table_style(self, table: Table):
         section = self.doc.sections[0]
         page_width = section.page_width - section.left_margin - section.right_margin
@@ -161,12 +193,12 @@ class StyleManager:
 
         for row, text_row in zip(table.docx_table.rows, table.data):
             for cell, cell_object_tab in zip(row.cells, text_row):
-                run = cell.paragraphs[0].runs[0]
-                run.font.name = self.config_service.get("documentFormatting.tables.family")  
-                run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
-                run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
-                run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
-                run.font.color.rgb = self.COLOR_MAP["green"] 
+                for run in cell.paragraphs[0].runs:
+                    run.font.name = self.config_service.get("documentFormatting.tables.family")  
+                    run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
+                    run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
+                    run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
+                    run.font.color.rgb = self.COLOR_MAP["green"] 
                 # run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")] 
                 paragraph_format  = cell.paragraphs[0].paragraph_format
 

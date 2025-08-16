@@ -118,8 +118,7 @@ def is_listing(paragraph):
     return has_borders or is_listing_style
 
 # Основная функция парсинга
-def parse_document(doc_path):
-    doc = Document(doc_path)
+def parse_document(doc):
     tree = []
     stack = [tree]
     current_level = 0
@@ -231,24 +230,24 @@ def parse_document(doc_path):
                 parent = stack[-1]
                 parent.append(Image(image_data, caption, paragraph, caption_paragraph, ""))
                 i += 1
-            elif has_formula(paragraph):
-                formula, caption = extract_formula_and_caption(paragraph)
-                caption_paragraph = None
-                if not caption:  # Check next paragraph only if no caption in current
-                    if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
-                        paragraph_index < len(doc.paragraphs) and
-                        is_formula_caption(doc.paragraphs[paragraph_index])):
-                        caption = doc.paragraphs[paragraph_index].text.strip()
-                        caption_paragraph = doc.paragraphs[paragraph_index]
-                        paragraph_index += 1
-                        i += 1
-                if formula:
-                    parent = stack[-1]
-                    parent.append(Formula(formula, caption, paragraph, caption_paragraph, ""))
-                else:
-                    parent = stack[-1]
-                    parent.append(UndefinedElement(str(paragraph._element), paragraph))
-                i += 1
+            # elif has_formula(paragraph):
+            #     formula, caption = extract_formula_and_caption(paragraph)
+            #     caption_paragraph = None
+            #     if not caption:  # Check next paragraph only if no caption in current
+            #         if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
+            #             paragraph_index < len(doc.paragraphs) and
+            #             is_formula_caption(doc.paragraphs[paragraph_index])):
+            #             caption = doc.paragraphs[paragraph_index].text.strip()
+            #             caption_paragraph = doc.paragraphs[paragraph_index]
+            #             paragraph_index += 1
+            #             i += 1
+            #     if formula:
+            #         parent = stack[-1]
+            #         parent.append(Formula(formula, caption, paragraph, caption_paragraph, ""))
+            #     else:
+            #         parent = stack[-1]
+            #         parent.append(UndefinedElement(str(paragraph._element), paragraph))
+            #     i += 1
             elif is_listing(paragraph):
                 listing_texts = [paragraph.text.strip() or "(empty)"]
                 listing_paragraphs = [paragraph]
@@ -298,8 +297,8 @@ def parse_document(doc_path):
                     caption = table.cell(0, 2).text.strip() or None
 
                     parent = stack[-1]
-                    parent.append(Formula(formula, caption, table.cell(0, 1).paragraphs[0],
-                                          None, table))
+                    parent.append(Formula(formula, caption, table,
+                                          table.cell(0, 2).paragraphs[0], caption))
                 else: 
                     caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
                     pending_table_caption = None
