@@ -5,14 +5,11 @@ from docx import Document
 from docx.text.paragraph import Paragraph 
 from elements import DataTable, Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
 from formula_helper import FormulaHelper
-from maind import print_tree
 from style_manager import StyleManager
 from tree_numbering import TreeNumbering
 from io import BytesIO
 
-from lxml import etree
-from docx.oxml import parse_xml
-from maind import parse_document
+from parser_word import ParserWord
 
 
 class WordDocumentManager:
@@ -22,23 +19,12 @@ class WordDocumentManager:
         
     def load_document(self,doc_path: str):
         self.doc = Document(doc_path)
-        # self.new_doc = Document(doc_path_new_load)
-        self.tree = parse_document(self.doc)
+        self.parser_word_manager = ParserWord(self.doc)
+        self.tree =self.parser_word_manager.parse_document()
         self.style_manager = StyleManager(self.doc,self.tree)
         self.numberer = TreeNumbering(self.tree)
         self.numberer.assign_numbers()
-        # self.move_all_content(self.tree,self.new_doc)
-        # self.doc_path_new_load=doc_path_new_load
         self.doc_path = doc_path
-    # def create_new_dcocument(self,doc_path: str):
-    #     self.doc = Document(doc_path)
-    #     self.tree = parse_document(self.doc_path)
-    #     self.style_manager = StyleManager(self.doc,self.tree)
-    #     self.numberer = TreeNumbering(self.tree)
-    #     self.numberer.assign_numbers()
-    #     self.move_all_content(self.tree,self.new_doc)
-    #     self.doc_path_new_load=doc_path_new_load
-    #     self.doc_path = doc_path
 
     def save_document(self, path: Optional[str] = None):
         """Сохраняет документ."""
@@ -84,15 +70,19 @@ class WordDocumentManager:
 
     def _update_element_word(self, element: Element):
         if isinstance(element, Header):
-            for run in element.docx_element.runs:
-                        run.text=''
             
-            element.docx_element.runs[0].text=element.text
-            # element.docx_element.clear()
-            # run = element.docx_element.add_run(element.text)
+            for i, run in enumerate(element.docx_element.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_element.runs:
+                element.docx_element.runs[0].text=element.text
+      
         elif isinstance(element, Paragraph):
-            for run in element.docx_element.runs:
-                run.text=element.text
+            for i, run in enumerate(element.docx_element.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_element.runs:
+                element.docx_element.runs[0].text=element.text
         elif isinstance(element, ListElement):
             # Получаем все существующие параграфы элемента
             old_paragraphs = element.docx_elements.copy()
@@ -163,8 +153,11 @@ class WordDocumentManager:
                         img_byte_arr = BytesIO()
                         img.save(img_byte_arr, format='PNG')
                         run.add_picture(BytesIO(img_byte_arr.getvalue()))
-            for run in element.docx_caption_paragraph.runs:
-                run.text=element.caption
+            for i, run in enumerate(element.docx_caption_paragraph.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_caption_paragraph.runs:
+                element.docx_caption_paragraph.runs[0].text=element.caption
         elif isinstance(element, Table):
             from docx.oxml import OxmlElement
             docx_table = element.docx_table
@@ -236,9 +229,15 @@ class WordDocumentManager:
         
                     dat = data[i][j]
                     # Update text
+                    for i, pr in enumerate(cell.paragraphs):
+                        if i != 0:  # Пропускаем первый элемент (индекс 0)
+                            pr.clear()
+                    
                     if cell.paragraphs[0].runs:
                         for run in cell.paragraphs[0].runs:
-                            run.text=dat.data
+                            run.text=''
+                        if cell.paragraphs[0].runs:
+                            cell.paragraphs[0].runs[0].text=dat.data
                     elif cell.paragraphs:
                         cell.paragraphs[0].text = dat.data
                     else:
@@ -252,8 +251,12 @@ class WordDocumentManager:
             if new_cells:  # Проверяем, что есть новые ячейки
                 self.style_manager.apply_update_table_style(new_cells,element.docx_table)
 
-            for run in element.docx_caption_paragraph.runs:
-                run.text= element.caption
+           
+            for i, run in enumerate(element.docx_caption_paragraph.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_caption_paragraph.runs:
+                element.docx_caption_paragraph.runs[0].text=element.caption
             
         elif isinstance(element, Formula):
             if element.docx_element is not None:
@@ -271,16 +274,28 @@ class WordDocumentManager:
                 # --- Update caption in cell(0, 2) ---
                 caption_cell = table.cell(0, 2)
                 caption_para = caption_cell.paragraphs[0]
-                for run in caption_para.runs:
-                    run.text= f"{element.caption}"
+                
+                for i, run in enumerate(caption_para.runs):
+                    if i != 0:  # Пропускаем первый элемент (индекс 0)
+                        run.clear()
+                if caption_para.runs.runs:
+                    caption_para.runs[0].text=f"{element.caption}"
             
             
         elif isinstance(element, Listing):
             # Сохраняем старые параграфы
-            for run in element.docx_listing_paragraphs[0].runs:
-                run.text=element.text
-            for run in element.docx_caption_paragraph.runs:
-                run.text = element.caption
+            for i, run in enumerate(element.docx_listing_paragraphs[0].runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_listing_paragraphs[0].runs:
+                element.docx_listing_paragraphs[0].runs[0].text=element.caption
+                    
+            for i, run in enumerate(element.docx_caption_paragraph.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_caption_paragraph.runs:
+                element.docx_caption_paragraph.runs[0].text=element.caption
+                
     
     def _get_last_nested_element(self, element):
         """
@@ -1069,10 +1084,17 @@ if __name__ == "__main__":
     source_paragraph = doc_manager.tree[0]
     # new_doc._element.body.append(source_paragraph.docx_element._element)
     doc_manager.update_element(source_paragraph,Header(1,"Ну он гей"))
-    p = Paragraph("dsHAHAadsa dsa1dsa")
-    doc_manager.add_element(source_paragraph,p)
+    # p = Paragraph("dsHAHAadsa dsa1dsa")
+    # doc_manager.add_element(source_paragraph,p)
     # doc_manager.add_element(None,Header(1,"dsadsa dsa1dsa"))
-    
-    print_tree(doc_manager.tree)
+    source_paragraph_t = source_paragraph.children[0]
+    doc_manager.update_element(source_paragraph_t,Table([
+        [DataTable("1", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("3", default_horizontal, default_vertical), DataTable("4", default_horizontal, default_vertical)],
+        [DataTable("5", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("7", default_horizontal, default_vertical), DataTable("8", default_horizontal, default_vertical)],
+        [DataTable("9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("11", default_horizontal, default_vertical),DataTable("12", default_horizontal, default_vertical)]
+
+    ],"Fracation 312table"))
+
+    doc_manager.parser_word_manager.print_tree(doc_manager.tree)
     doc_manager.save_document()
     # doc_manager.doc.save("put.docx")

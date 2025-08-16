@@ -61,9 +61,11 @@ class TreeNumbering:
                 element.text_number_of_element = ".".join(map(str, self.header_counters[:element.level]))
                 element.text =f"{element.text_number_of_element} {self.extract_text_after_leading_numbers(element.text)}"
                 if element.docx_element is not None and element.docx_element.text is not None:
-                    for run in element.docx_element.runs:
-                        run.text=''
-                    element.docx_element.runs[0].text=element.text
+                    for i, run in enumerate(element.docx_element.runs):
+                        if i != 0:  # Пропускаем первый элемент (индекс 0)
+                            run.clear()
+                    if element.docx_element.runs:
+                        element.docx_element.runs[0].text=element.text
                     
                    
                 # Recursion for child elements
@@ -120,10 +122,12 @@ class TreeNumbering:
             element.caption = f"Листинг {element.text_number_of_element} – {self.clean_caption(element.caption) or 'Описание'}"
         elif isinstance(element, Formula):
             element.caption = f"({element.text_number_of_element})"
-        if element.docx_caption_paragraph is not None and element.docx_caption_paragraph.text is not None:
-                    
-                    for run in element.docx_caption_paragraph.runs:
-                        run.text=element.caption
+        if element.docx_caption_paragraph is not None and element.docx_caption_paragraph.text is not None:    
+            for i, run in enumerate(element.docx_caption_paragraph.runs):
+                if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    run.clear()
+            if element.docx_caption_paragraph.runs:
+                element.docx_caption_paragraph.runs[0].text=element.caption
     def update_numbering(self, subtree: List[Element], top_level_number: str = None):
         """Updates numbering for a subtree, starting from the specified top level."""
         if top_level_number is None:
