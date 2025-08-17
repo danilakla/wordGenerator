@@ -3,6 +3,9 @@ from typing import List
 from elements import DataTable, ListElement, Paragraph, UndefinedElement
 from elements import Element, Formula, Header, Image, Listing, Table
 import re
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+
 from docx import Document
 from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.ns import qn, nsmap
@@ -302,17 +305,10 @@ class ParserWord:
                     else: 
                         caption, caption_paragraph = pending_table_caption if pending_table_caption else (None, None)
                         pending_table_caption = None
-                        data = [
-                                [
-                                    DataTable(
-                                        data=cell.text.strip(),
-                                        horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
-                                        vertical=cell.vertical_alignment
-                                    ) 
-                                    for cell in row.cells
-                                ] 
-                                for row in table.rows
-                            ]
+
+                        # Парсим таблицу с учётом объединений
+                        data = self.parse_table_with_merging(table)
+
                         parent = stack[-1]
                         parent.append(Table(data, caption, table, caption_paragraph, ""))
                 else:
@@ -325,6 +321,64 @@ class ParserWord:
                 i += 1
 
         return tree
+    
+
+
+    def parse_table_with_merging(self, table) -> List[List[DataTable]]:
+        """Парсит таблицу, учитывая объединённые и разделённые ячейки"""
+        data = []
+
+        for i, row in enumerate(table.rows):
+            data_row = []
+            for j, cell in enumerate(row.cells):
+                # Получаем свойства ячейки из XML
+                tc_pr = cell._element.tcPr
+                grid_span = None
+                v_merge = None
+
+                if tc_pr is not None:
+                    grid_span = next((e for e in tc_pr if e.tag.endswith('gridSpan')), None)
+                    v_merge = next((e for e in tc_pr if e.tag.endswith('vMerge')), None)
+
+                colspan = int(grid_span.get(qn("w:val"))) if grid_span is not None else 1
+                is_vmerge_restart = v_merge is not None and v_merge.get(qn("w:val")) == "restart"
+
+                # Определяем rowspan (если ячейка объединена вертикально)
+                rowspan = 1
+                if is_vmerge_restart:
+                    rowspan = 1
+                    for k in range(i + 1, len(table.rows)):
+                        try:
+                            next_cell = table.cell(k, j)
+                            next_tc_pr = next_cell._element.tcPr
+                            next_vmerge = None
+                            if next_tc_pr is not None:
+                                next_vmerge = next((e for e in next_tc_pr if e.tag.endswith('vMerge')), None)
+
+                            if next_vmerge is not None and next_vmerge.get(qn("w:val")) == "continue":
+                                rowspan += 1
+                            else:
+                                break
+                        except IndexError:
+                            break
+
+                # Получаем текст ячейки
+                cell_text = ' '.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
+
+                # Создаём DataTable
+                cell_data = DataTable(
+                    data=cell_text,
+                    horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
+                    vertical=cell.vertical_alignment,
+                    rowspan=rowspan,
+                    colspan=colspan,
+                    is_merged=(rowspan > 1 or colspan > 1)
+                )
+                data_row.append(cell_data)
+
+            data.append(data_row)
+
+        return data
     def print_tree(self,elements, indent=0, prefix=""):
         for i, elem in enumerate(elements):
             is_last = i == len(elements) - 1

@@ -219,33 +219,7 @@ class WordDocumentManager:
                     tbl_grid.remove(tbl_grid[-1])
         
             # Update cell contents
-            for i in range(new_rows):
-                for j in range(new_cols):
-                    try:
-                        cell = docx_table.cell(i, j)
-                    except IndexError:
-                        # If cell access fails, table structure may still be inconsistent
-                        raise IndexError(f"Cannot access cell ({i}, {j}). Table structure is inconsistent. Rows: {len(docx_table.rows)}, Cols: {len(docx_table.columns)}")
-        
-                    dat = data[i][j]
-                    # Update text
-                    for it1, pr in enumerate(cell.paragraphs):
-                        if it1 != 0:  # Пропускаем первый элемент (индекс 0)
-                            pr.clear()
-                    
-                    if cell.paragraphs[0].runs:
-                        for run in cell.paragraphs[0].runs:
-                            run.text=''
-                        if cell.paragraphs[0].runs:
-                            cell.paragraphs[0].runs[0].text=dat.data
-                    elif cell.paragraphs:
-                        cell.paragraphs[0].text = dat.data
-                    else:
-                        cell.add_paragraph(dat.data)
-                        
-                    cell.paragraphs[0].alignment = dat.horizontal
-                    cell.vertical_alignment = dat.vertical
-
+            element.update_docx_table()
 
             # Применяем стили к новым ячейкам
             if new_cells:  # Проверяем, что есть новые ячейки
@@ -1082,18 +1056,79 @@ if __name__ == "__main__":
 
         
     source_paragraph = doc_manager.tree[0]
-    # doc_manager.update_element(source_paragraph,Header(1,"Ну он гей"))
+    doc_manager.update_element(source_paragraph,Header(1,"Ну он гей"))
     # p = Paragraph("dsHAHAadsa dsa1dsa")
     # # doc_manager.add_element(source_paragraph,p)
     # # doc_manager.add_element(None,Header(1,"dsadsa dsa1dsa"))
     source_paragraph_t = source_paragraph.children[0]
-    doc_manager.update_element(source_paragraph_t,Table([
-        [DataTable("empty$right", default_horizontal, default_vertical), DataTable("1,2", default_horizontal, default_vertical),DataTable("empty$down", default_horizontal, default_vertical), DataTable("empty$down", default_horizontal, default_vertical)],
-        [DataTable("empty$down", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("empty$down", default_horizontal, default_vertical), DataTable("empty$down", default_horizontal, default_vertical)],
-        [DataTable("5,9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("empty$right", default_horizontal, default_vertical),DataTable("val12", default_horizontal, default_vertical)]
+    # doc_manager.update_element(source_paragraph_t,Table([
+    #     [DataTable("1", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("3", default_horizontal, default_vertical), DataTable("4", default_horizontal, default_vertical)],
+    #     [DataTable("5", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("7", default_horizontal, default_vertical), DataTable("8", default_horizontal, default_vertical)],
+    #     [DataTable("9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("11", default_horizontal, default_vertical),DataTable("12", default_horizontal, default_vertical)]
 
-    ],"Fracation 312table"))
-
+    # ],"Fracation 312table"))
     doc_manager.parser_word_manager.print_tree(doc_manager.tree)
     doc_manager.save_document()
     # doc_manager.doc.save("put.docx")
+    def print_pretty_table(parsed_table: List[List[DataTable]]) -> None:
+        """
+        Красиво отображает таблицу в консоли с учётом объединений и разделений ячеек
+        """
+        if not parsed_table:
+            print("Пустая таблица")
+            return
+
+        # Сначала вычисляем максимальные ширины для каждого столбца
+        col_widths = {}
+        for row in parsed_table:
+            for j, cell in enumerate(row):
+                if cell is None:
+                    continue
+                current_width = len(cell.data)
+                if j not in col_widths or current_width > col_widths[j]:
+                    col_widths[j] = current_width
+
+        # Добавляем отступы (минимум 3 символа)
+        col_widths = {k: max(v + 2, 8) for k, v in col_widths.items()}
+
+        # Функция для создания горизонтальной границы
+        def make_border():
+            border = "+"
+            for j in sorted(col_widths.keys()):
+                border += "-" * col_widths[j] + "+"
+            return border
+
+        # Печатаем таблицу
+        print(make_border())
+
+        for i, row in enumerate(parsed_table):
+            # Печатаем содержимое строки
+            line = "|"
+            for j, cell in enumerate(row):
+                if cell is None:
+                    # Пустая ячейка (часть объединённой)
+                    line += " " * col_widths[j] + "|"
+                else:
+                    # Центрируем текст в ячейке
+                    padding = col_widths[j] - len(cell.data)
+                    left_pad = padding // 2
+                    right_pad = padding - left_pad
+                    line += " " * left_pad + cell.data + " " * right_pad + "|"
+            print(line)
+
+            # Печатаем разделитель после строки
+            print(make_border())
+
+            # Обрабатываем вертикальные объединения
+            max_rowspan = max(cell.rowspan for cell in row if cell is not None) if any(cell is not None for cell in row) else 1
+            for _ in range(1, max_rowspan):
+                line = "|"
+                for j, cell in enumerate(row):
+                    if cell is None:
+                        line += " " * col_widths[j] + "|"
+                    else:
+                        line += " " * col_widths[j] + "|"
+                print(line)
+                print(make_border())
+                
+    print_pretty_table(source_paragraph_t.data)

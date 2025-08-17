@@ -52,6 +52,9 @@ class DataTable:
     data:str
     horizontal:WD_PARAGRAPH_ALIGNMENT
     vertical:WD_CELL_VERTICAL_ALIGNMENT
+    rowspan: Optional[int] = 1  # Количество строк, которые занимает ячейка (по умолчанию 1)
+    colspan: Optional[int] = 1  # Количество столбцов (по умолчанию 1)
+    is_merged: Optional[bool] = False
 # Таблица
 @dataclass
 class Table(Element):
