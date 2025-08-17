@@ -6,31 +6,29 @@ from elements import DataTable, Table
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 # Создание таблицы
+# Создание таблицы
 doc = Document()
-docx_table = doc.add_table(rows=3, cols=3)
-table = Table(
-    data=[],
-    caption="Пример",
-    docx_table=docx_table
-)
+table = doc.add_table(rows=3, cols=3)
+docx_table = Table(docx_table=table, caption="Пример")
 
-# Заполнение данными (автоматически синхронизируется)
+# Заполнение данных
 for i in range(3):
     for j in range(3):
-        cell_data = table.data[i][j]
-        cell_data.data = f"{i}-{j}"
-        cell_data.horizontal = WD_PARAGRAPH_ALIGNMENT.CENTER
-        cell_data.vertical = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        cell = docx_table.docx_table.cell(i, j)
+        cell.text = f"{i+1}-{j+1}"
+
+# Обновление внутреннего представления
+docx_table._build_layout_grid()
+docx_table._sync_data_with_grid()
 
 # Объединение ячеек
-table.merge_cells(0, 0, 1, 1)  # Объединяем 4 ячейки
+docx_table.merge_cells(0, 0, 1, 1)
 
 # Разделение ячейки
-table.split_cell(2, 2, 2, 2)   # Разделяем на 4 ячейки
+docx_table.split_cell(2, 2, 2, 2)
 
-# Просмотр структуры
-table.print_debug_info()
+# Обновление документа
+docx_table.update_docx_table()
 
-# Сохранение изменений
-# table.update_docx_table()
+# Сохранение
 doc.save("table_example.docx")
