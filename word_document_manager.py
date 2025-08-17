@@ -229,8 +229,8 @@ class WordDocumentManager:
         
                     dat = data[i][j]
                     # Update text
-                    for i, pr in enumerate(cell.paragraphs):
-                        if i != 0:  # Пропускаем первый элемент (индекс 0)
+                    for it1, pr in enumerate(cell.paragraphs):
+                        if it1 != 0:  # Пропускаем первый элемент (индекс 0)
                             pr.clear()
                     
                     if cell.paragraphs[0].runs:
@@ -278,7 +278,7 @@ class WordDocumentManager:
                 for i, run in enumerate(caption_para.runs):
                     if i != 0:  # Пропускаем первый элемент (индекс 0)
                         run.clear()
-                if caption_para.runs.runs:
+                if caption_para.runs:
                     caption_para.runs[0].text=f"{element.caption}"
             
             
@@ -1082,16 +1082,15 @@ if __name__ == "__main__":
 
         
     source_paragraph = doc_manager.tree[0]
-    # new_doc._element.body.append(source_paragraph.docx_element._element)
-    doc_manager.update_element(source_paragraph,Header(1,"Ну он гей"))
+    # doc_manager.update_element(source_paragraph,Header(1,"Ну он гей"))
     # p = Paragraph("dsHAHAadsa dsa1dsa")
-    # doc_manager.add_element(source_paragraph,p)
-    # doc_manager.add_element(None,Header(1,"dsadsa dsa1dsa"))
+    # # doc_manager.add_element(source_paragraph,p)
+    # # doc_manager.add_element(None,Header(1,"dsadsa dsa1dsa"))
     source_paragraph_t = source_paragraph.children[0]
     doc_manager.update_element(source_paragraph_t,Table([
-        [DataTable("1", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("3", default_horizontal, default_vertical), DataTable("4", default_horizontal, default_vertical)],
-        [DataTable("5", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("7", default_horizontal, default_vertical), DataTable("8", default_horizontal, default_vertical)],
-        [DataTable("9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("11", default_horizontal, default_vertical),DataTable("12", default_horizontal, default_vertical)]
+        [DataTable("empty$right", default_horizontal, default_vertical), DataTable("1,2", default_horizontal, default_vertical),DataTable("empty$down", default_horizontal, default_vertical), DataTable("empty$down", default_horizontal, default_vertical)],
+        [DataTable("empty$down", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("empty$down", default_horizontal, default_vertical), DataTable("empty$down", default_horizontal, default_vertical)],
+        [DataTable("5,9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("empty$right", default_horizontal, default_vertical),DataTable("val12", default_horizontal, default_vertical)]
 
     ],"Fracation 312table"))
 
