@@ -56,6 +56,8 @@ class DataTable:
     rowspan: int = 1
     colspan: int = 1
     is_merged: bool = False
+    partent_col:Optional[int] =None
+    partent_row:Optional[int] =None
 
 @dataclass
 class Table:
