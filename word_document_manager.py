@@ -1068,7 +1068,6 @@ if __name__ == "__main__":
 
     # ],"Frac33ation 312table"))
     doc_manager.parser_word_manager.print_tree(doc_manager.tree)
-    doc_manager.save_document()
     # doc_manager.doc.save("put.docx")
     def print_pretty_table(parsed_table: List[List[DataTable]]) -> None:
         """
@@ -1120,8 +1119,7 @@ if __name__ == "__main__":
             print(make_border())
 
             # Обрабатываем вертикальные объединения
-            max_rowspan = max(cell.rowspan for cell in row if cell is not None) if any(cell is not None for cell in row) else 1
-            for _ in range(1, max_rowspan):
+            for _ in range(1, 1):
                 line = "|"
                 for j, cell in enumerate(row):
                     if cell is None:
@@ -1132,3 +1130,5 @@ if __name__ == "__main__":
                 print(make_border())
                 
     print_pretty_table(source_paragraph_t.data)
+    doc_manager.save_document()
+

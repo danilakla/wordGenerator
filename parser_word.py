@@ -345,50 +345,51 @@ class ParserWord:
                     data=cell_text,
                     horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
                     vertical=cell.vertical_alignment,
-                    rowspan=0,
-                    colspan=0,
-                    partent_row=x,
-                    partent_col=y)
+                    parent_row=x,
+                    parent_col=y)
                     data_row.append(cell_data)
                     continue
                 tc_pr = cell._element.tcPr
                 grid_span = None
-                v_merge = None
 
                 if tc_pr is not None:
                     grid_span = next((e for e in tc_pr if e.tag.endswith('gridSpan')), None)
-                    v_merge = next((e for e in tc_pr if e.tag.endswith('vMerge')), None)
 
                 colspan = int(grid_span.get(qn("w:val"))) if grid_span is not None else 1
-                #toto review restart
-                is_vmerge_restart = v_merge is not None and v_merge.get(qn("w:val")) == "restart"
+
                 paraId=None
                 if cell.paragraphs:
                     paraId = cell.paragraphs[0]._element.get(f"{{{ns['w14']}}}paraId")
                 # Определяем rowspan (если ячейка объединена вертикально)
-                rowspan = 1
-                if is_vmerge_restart:
                     rowspan = 1
                     for k in range(i + 1, len(table.rows)):
                         try:
                             next_cell = table.cell(k, j)
-                            next_tc_pr = next_cell._element.tcPr
-                            next_vmerge = None
                             next_paraId=None
                             if next_cell.paragraphs:
                                 next_paraId = next_cell.paragraphs[0]._element.get(f"{{{ns['w14']}}}paraId")
 
-                            if next_tc_pr is not None:
-                                next_vmerge = next((e for e in next_tc_pr if e.tag.endswith('vMerge')), None)
+                     
+                            if  next_paraId==paraId:
+                                if len(table.rows)==k+1:
+                                    bottom_left=(k,j)
+                                    bottom_right = (k,j+colspan-1)
+                                    top_left = (i,j)
+                                    top_right = (i,j+colspan-1)
+                                    visited[top_right[0]][top_right[1]] = (i,j)
+                                    visited[top_left[0]][top_left[1]] = (i,j)
+                                    visited[bottom_right[0]][bottom_right[1]] = (i,j)
+                                    visited[bottom_left[0]][bottom_left[1]] = (i,j)
+                                    for x in range(top_left[0], bottom_left[0] + 1):
+                                        for y in range(top_left[1], top_right[1] + 1):
+                                            visited[x][y] = (i,j)
 
-                            if next_vmerge is not None and next_paraId==paraId:
-                                rowspan += 1
                             else:
                                 
                                 bottom_left=(k-1,j)
                                 bottom_right = (k-1,j+colspan-1)
-                                top_right = (i,j)
-                                top_left = (i,j+colspan-1)
+                                top_left = (i,j)
+                                top_right = (i,j+colspan-1)
                                 visited[top_right[0]][top_right[1]] = (i,j)
                                 visited[top_left[0]][top_left[1]] = (i,j)
                                 visited[bottom_right[0]][bottom_right[1]] = (i,j)
@@ -408,11 +409,9 @@ class ParserWord:
                     data=cell_text,
                     horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
                     vertical=cell.vertical_alignment,
-                    rowspan=rowspan,
                     colspan=colspan,
-                    is_merged=(rowspan > 1 or colspan > 1),
-                    partent_row=i,
-                    partent_col=j
+                    parent_row=i,
+                    parent_col=j
                 )
                 data_row.append(cell_data)
 

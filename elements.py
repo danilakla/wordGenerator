@@ -53,11 +53,9 @@ class DataTable:
     data: str
     horizontal: WD_PARAGRAPH_ALIGNMENT
     vertical: WD_CELL_VERTICAL_ALIGNMENT
-    rowspan: int = 1
-    colspan: int = 1
-    is_merged: bool = False
-    partent_col:Optional[int] =None
-    partent_row:Optional[int] =None
+    colspan: int =0
+    parent_col:Optional[int] =None
+    parent_row:Optional[int] =None
 
 @dataclass
 class Table:
