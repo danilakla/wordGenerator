@@ -842,9 +842,68 @@ class WordDocumentManager:
                 dst_body.append(element.docx_caption_paragraph._element)
             
             
-  
+
 # Пример использования
 if __name__ == "__main__":
+    def print_pretty_table(parsed_table: List[List[DataTable]]) -> None:
+        """
+        Красиво отображает таблицу в консоли с учётом объединений и разделений ячеек
+        """
+        if not parsed_table:
+            print("Пустая таблица")
+            return
+
+        # Сначала вычисляем максимальные ширины для каждого столбца
+        col_widths = {}
+        for row in parsed_table:
+            for j, cell in enumerate(row):
+                if cell is None:
+                    continue
+                current_width = len(cell.data)
+                if j not in col_widths or current_width > col_widths[j]:
+                    col_widths[j] = current_width
+
+        # Добавляем отступы (минимум 3 символа)
+        col_widths = {k: max(v + 2, 8) for k, v in col_widths.items()}
+
+        # Функция для создания горизонтальной границы
+        def make_border():
+            border = "+"
+            for j in sorted(col_widths.keys()):
+                border += "-" * col_widths[j] + "+"
+            return border
+
+        # Печатаем таблицу
+        print(make_border())
+
+        for i, row in enumerate(parsed_table):
+            # Печатаем содержимое строки
+            line = "|"
+            for j, cell in enumerate(row):
+                if cell is None:
+                    # Пустая ячейка (часть объединённой)
+                    line += " " * col_widths[j] + "|"
+                else:
+                    # Центрируем текст в ячейке
+                    padding = col_widths[j] - len(cell.data)
+                    left_pad = padding // 2
+                    right_pad = padding - left_pad
+                    line += " " * left_pad + cell.data+" "+f"({cell.parent_row} {cell.parent_col}" + " " * right_pad + "|"
+            print(line)
+
+            # Печатаем разделитель после строки
+            print(make_border())
+
+            # Обрабатываем вертикальные объединения
+            for _ in range(1, 1):
+                line = "|"
+                for j, cell in enumerate(row):
+                    if cell is None:
+                        line += " " * col_widths[j] + "|"
+                    else:
+                        line += " " * col_widths[j] + "|"
+                print(line)
+                print(make_border())
     from io import BytesIO
     from PIL import Image as PILImage
     doc_manager = WordDocumentManager()
@@ -1061,74 +1120,20 @@ if __name__ == "__main__":
     # # doc_manager.add_element(source_paragraph,p)
     # # doc_manager.add_element(None,Header(1,"dsadsa dsa1dsa"))
     source_paragraph_t = source_paragraph.children[0]
-    # doc_manager.update_element(source_paragraph_t,Table([
-    #     [DataTable("13", default_horizontal, default_vertical), DataTable("2", default_horizontal, default_vertical),DataTable("3", default_horizontal, default_vertical), DataTable("4", default_horizontal, default_vertical)],
-    #     [DataTable("5", default_horizontal, default_vertical),DataTable("6", default_horizontal, default_vertical),DataTable("7", default_horizontal, default_vertical), DataTable("8", default_horizontal, default_vertical)],
-    #     [DataTable("9", default_horizontal, default_vertical), DataTable("10", default_horizontal, default_vertical),DataTable("11", default_horizontal, default_vertical),DataTable("12", default_horizontal, default_vertical)]
-
-    # ],"Frac33ation 312table"))
-    doc_manager.parser_word_manager.print_tree(doc_manager.tree)
+  
+    print_pretty_table(source_paragraph_t.data)
+    
+    if isinstance(source_paragraph_t,Table):
+        # source_paragraph_t.insert_row_under(4)
+        # source_paragraph_t.insert_row_under(11)
+        source_paragraph_t.insert_row_above(5)
+        # source_paragraph_t.add_column_left()
+        # source_paragraph_t.add_column_right()
+        doc_manager.update_element(source_paragraph_t,source_paragraph_t)      
+        print('ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd')
+    # doc_manager.parser_word_manager.print_tree(doc_manager.tree)
     # doc_manager.doc.save("put.docx")
-    def print_pretty_table(parsed_table: List[List[DataTable]]) -> None:
-        """
-        Красиво отображает таблицу в консоли с учётом объединений и разделений ячеек
-        """
-        if not parsed_table:
-            print("Пустая таблица")
-            return
-
-        # Сначала вычисляем максимальные ширины для каждого столбца
-        col_widths = {}
-        for row in parsed_table:
-            for j, cell in enumerate(row):
-                if cell is None:
-                    continue
-                current_width = len(cell.data)
-                if j not in col_widths or current_width > col_widths[j]:
-                    col_widths[j] = current_width
-
-        # Добавляем отступы (минимум 3 символа)
-        col_widths = {k: max(v + 2, 8) for k, v in col_widths.items()}
-
-        # Функция для создания горизонтальной границы
-        def make_border():
-            border = "+"
-            for j in sorted(col_widths.keys()):
-                border += "-" * col_widths[j] + "+"
-            return border
-
-        # Печатаем таблицу
-        print(make_border())
-
-        for i, row in enumerate(parsed_table):
-            # Печатаем содержимое строки
-            line = "|"
-            for j, cell in enumerate(row):
-                if cell is None:
-                    # Пустая ячейка (часть объединённой)
-                    line += " " * col_widths[j] + "|"
-                else:
-                    # Центрируем текст в ячейке
-                    padding = col_widths[j] - len(cell.data)
-                    left_pad = padding // 2
-                    right_pad = padding - left_pad
-                    line += " " * left_pad + cell.data + " " * right_pad + "|"
-            print(line)
-
-            # Печатаем разделитель после строки
-            print(make_border())
-
-            # Обрабатываем вертикальные объединения
-            for _ in range(1, 1):
-                line = "|"
-                for j, cell in enumerate(row):
-                    if cell is None:
-                        line += " " * col_widths[j] + "|"
-                    else:
-                        line += " " * col_widths[j] + "|"
-                print(line)
-                print(make_border())
+    
                 
     print_pretty_table(source_paragraph_t.data)
     doc_manager.save_document()
-
