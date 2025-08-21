@@ -262,7 +262,7 @@ class WordDocumentManager:
                 if i != 0:  # Пропускаем первый элемент (индекс 0)
                     run.clear()
             if element.docx_listing_paragraphs[0].runs:
-                element.docx_listing_paragraphs[0].runs[0].text=element.caption
+                element.docx_listing_paragraphs[0].runs[0].text=element.text
                     
             for i, run in enumerate(element.docx_caption_paragraph.runs):
                 if i != 0:  # Пропускаем первый элемент (индекс 0)
