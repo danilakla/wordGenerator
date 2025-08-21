@@ -339,7 +339,7 @@ class ParserWord:
             for j, cell in enumerate(row.cells):
                 # Получаем свойства ячейки из XML
                 if visited[i][j] !=(-1,-1):
-                    cell_text = ' '.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
+                    cell_text = '\n'.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
                     x, y = visited[i][j]
                     cell_data = DataTable(
                     data=cell_text,
@@ -402,7 +402,7 @@ class ParserWord:
                             break
 
                 # Получаем текст ячейки
-                cell_text = ' '.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
+                cell_text = '\n'.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
 
                 # Создаём DataTable
                 cell_data = DataTable(
