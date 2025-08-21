@@ -49,6 +49,7 @@
         "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 0,
+        "spacingBeforeTable": 14,
         "first_line":1.25
       
       }
@@ -189,6 +190,7 @@
         "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 0,
+        "spacingBeforeTable": 14,
         "first_line":1.25
       
       }

@@ -165,6 +165,12 @@ class StyleManager:
         target_format.keep_with_next = source_format.keep_with_next
         target_format.page_break_before = source_format.page_break_before
         target_format.widow_control = source_format.widow_control
+    def appply_move_table(self,table):
+        neighbor_after = self.neighbor_finder.get_after(table)
+        if isinstance(neighbor_after,Paragraph):
+            neighbor_after.docx_element.paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        if isinstance(neighbor_after,ListElement):
+            neighbor_after.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
     def apply_table_style(self, table: Table):
         section = self.doc.sections[0]
         page_width = section.page_width - section.left_margin - section.right_margin
@@ -173,6 +179,11 @@ class StyleManager:
 
         tb_l.autofit = False  # Фиксированные ширины
         tb_l.allow_autofit = False
+        neighbor_after = self.neighbor_finder.get_after(table)
+        if isinstance(neighbor_after,Paragraph):
+            neighbor_after.docx_element.paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        if isinstance(neighbor_after,ListElement):
+            neighbor_after.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
         for run in table.docx_caption_paragraph.runs:
             run.font.name = self.config_service.get("documentFormatting.tables.caption.family")  
             run.font.size = Pt(self.config_service.get("documentFormatting.tables.caption.size"))   
@@ -387,13 +398,38 @@ class StyleManager:
         paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_left", 0))      
         paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_right", 0))   
         paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.first_line", 0))
-        paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBefore", 0))  # Space before paragraph
+        neighbor_before = self.neighbor_finder.get_before(paragraph)
+        if isinstance(neighbor_before,Table): 
+            paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        else:
+            paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBefore", 0))
+            
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingAfter", 0))
         paragraph_format.alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.paragraph.paragraph_format.alignment", 0)]
           
 
-
+    def apply_after_table_if_table_exist(self,element):
+        neighbor_before = self.neighbor_finder.get_before(element)
+        if isinstance(element,Paragraph) and isinstance(neighbor_before,Table):
+             element.docx_element.paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        if isinstance(element,ListElement) and isinstance(neighbor_before,Table):
+            element.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+            
+    def apply_after_table_if_table_exist_delete(self,element):
+        neighbor_after = self.neighbor_finder.get_after(element)
+        if isinstance(neighbor_after,Paragraph) and isinstance(neighbor_after,Table):
+             neighbor_after.docx_element.paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        if isinstance(neighbor_after,ListElement) and isinstance(neighbor_after,Table):
+            neighbor_after.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+            
+        
     def apply_list_style(self, list_element: ListElement):
+        neighbor_before = self.neighbor_finder.get_before(list_element)
+        if isinstance(neighbor_before,Table): 
+            list_element.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+        else:
+            list_element.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBefore", 0))
+            
         for list_item in list_element.docx_elements:
             for run in list_item.runs:
                 run.font.name = self.config_service.get("documentFormatting.lists.family")  
@@ -407,6 +443,5 @@ class StyleManager:
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_right", 0))   
             paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.lists.paragraph_format.first_line", 0))
-            paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingBefore", 0))  # Space before paragraph
             paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.spacingAfter", 0))
             paragraph_format.alignment = self.WD_PARAGRAPH_ALIGNMENT_MAP[self.config_service.get("documentFormatting.paragraph.paragraph_format.alignment", 0)]
