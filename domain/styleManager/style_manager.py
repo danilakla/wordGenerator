@@ -10,11 +10,13 @@ from elements.listing import Listing
 from elements.table import Table
 from elements.paragraph import Paragraph
 from docx import Document
-from docx.shared import Pt, RGBColor,Inches
+from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH,WD_PARAGRAPH_ALIGNMENT,WD_LINE_SPACING
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Cm
+from docx.oxml import parse_xml
 
 from util.config_service import ConfigService
 from util.neighbor_finder import NeighborFinder
@@ -82,6 +84,31 @@ class StyleManager:
             math_pr.append(math_font)
 
         math_font.set(qn('m:val'), "XITS Math")
+        
+        for section in self.doc.sections:
+            section.top_margin = Cm(self.config_service.get("documentFormatting.general.margins.top"))
+            section.bottom_margin = Cm(self.config_service.get("documentFormatting.general.margins.bottom"))
+            section.left_margin = Cm(self.config_service.get("documentFormatting.general.margins.left"))
+            section.right_margin = Cm(self.config_service.get("documentFormatting.general.margins.right"))
+    
+        auto_hyphenation = settings.element.find(qn('w:autoHyphenation'))
+        if auto_hyphenation is None:
+            auto_hyphenation = parse_xml(r'<w:autoHyphenation xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:val="true"/>')
+            settings.element.append(auto_hyphenation)
+        else:
+            auto_hyphenation.set(qn('w:val'), 'true')
+
+        # Устанавливаем параметры переносов
+        hyphenation_zone = settings.element.find(qn('w:hyphenationZone'))
+        if hyphenation_zone is None:
+            hyphenation_zone = parse_xml(r'<w:hyphenationZone xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:val="360"/>')
+            settings.element.append(hyphenation_zone)
+
+        consecutive_hyphens = settings.element.find(qn('w:consecutiveHyphenLimit'))
+        if consecutive_hyphens is None:
+            consecutive_hyphens = parse_xml(r'<w:consecutiveHyphenLimit xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:val="3"/>')
+            settings.element.append(consecutive_hyphens)
+   
     def cm_to_pt(self,cm):
         """Конвертирует сантиметры в пункты (1 см ≈ 28.35 pt)."""
         return Pt(cm * 28.3464567)
@@ -214,8 +241,7 @@ class StyleManager:
                     run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
                     run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
                     run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
-                    run.font.color.rgb = self.COLOR_MAP["green"] 
-                # run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")] 
+                    run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")  ] 
                 paragraph_format  = cell.paragraphs[0].paragraph_format
 
                 paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.tables.paragraph_format.line_sp", 0)]
@@ -379,6 +405,14 @@ class StyleManager:
             
         for paragraph in listing.docx_listing_paragraphs :
             p_pr = paragraph._element.get_or_add_pPr()
+    
+            suppress_elem = p_pr.find(qn('w:suppressAutoHyphens'))
+            if suppress_elem is None:
+                suppress_elem = parse_xml(r'<w:suppressAutoHyphens xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>')
+                p_pr.append(suppress_elem)
+
+            # Устанавливаем значение true для подавления переносов
+            suppress_elem.set(qn('w:val'), 'true')
             p_bdr = OxmlElement('w:pBdr')
             for border_name in ['top', 'left', 'bottom', 'right']:
                 border = OxmlElement(f'w:{border_name}')

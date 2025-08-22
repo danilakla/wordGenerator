@@ -12,11 +12,13 @@ from elements.paragraph import Paragraph
 from domain.styleManager.style_manager import StyleManager
 from domain.wordManager.tree_numbering import TreeNumbering
 from io import BytesIO
+from PIL import Image as PILImage
 
 from domain.parserManager.parser_word import ParserWord
 from util.formula_helper import FormulaHelper
 
-
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 class WordDocumentManager:
     def __init__(self):
         self.tree = []
@@ -154,7 +156,6 @@ class WordDocumentManager:
                     except Exception as e:
                         print(f"Ошибка добавления изображения: {e}")
                         # Создаём заглушку
-                        from PIL import Image as PILImage
                         img = PILImage.new('RGB', (100, 100), color='gray')
                         img_byte_arr = BytesIO()
                         img.save(img_byte_arr, format='PNG')
@@ -165,11 +166,9 @@ class WordDocumentManager:
             if element.docx_caption_paragraph.runs:
                 element.docx_caption_paragraph.runs[0].text=element.caption
         elif isinstance(element, Table):
-            from docx.oxml import OxmlElement
             docx_table = element.docx_table
             data = element.data
             new_cells: List = []
-            from docx.oxml.ns import qn
             # Assume data is rectangular
             new_rows = len(data)
             new_cols = len(data[0]) if new_rows > 0 else 0
@@ -360,8 +359,8 @@ class WordDocumentManager:
         # Добавляем элемент в документ
         if isinstance(element, Header):
             style_name = f'Heading {element.level}'
-            if style_name not in [s.name for s in self.doc.styles]:
-                self.doc.styles.add_style(style_name, 1)
+            # if style_name not in [s.name for s in self.doc.styles]:
+            #     self.doc.styles.add_style(style_name, 1)
             p = self.doc.add_heading(element.text, level=element.level)
             element.docx_element = p
             element.docx_element.style = f'Heading {element.level}'
@@ -379,7 +378,6 @@ class WordDocumentManager:
                 run.add_picture(BytesIO(element.image_data))
             except:
                 # Заглушка: создаем временное изображение
-                from PIL import Image as PILImage
                 img = PILImage.new('RGB', (100, 100), color='gray')
                 img_byte_arr = BytesIO()
                 img.save(img_byte_arr, format='PNG')

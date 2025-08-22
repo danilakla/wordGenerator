@@ -2,8 +2,6 @@ import re
 from typing import List
 
 import re
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 
 from docx import Document
 from docx.oxml.ns import qn, nsmap
@@ -100,7 +98,6 @@ class ParserWord:
     def has_formula(self,paragraph):
         has_omath = paragraph._element.findall('.//m:oMath', namespaces=nsmap)
         has_omathpara = paragraph._element.findall('.//m:oMathPara', namespaces=nsmap)
-        # print(f"Checking paragraph for formula: has_omath={len(has_omath) > 0}, has_omathpara={len(has_omathpara) > 0}")
 
         return has_omath or has_omathpara
 
@@ -116,16 +113,13 @@ class ParserWord:
         caption_match = re.search(r'\(\d+\.\d+\)', text)
         if caption_match:
             caption = caption_match.group(0)
-        # print(f"Extracting formula: formula_present={bool(formula)}, caption={caption}")
         return formula, caption
 
     def is_listing(self,paragraph):
         # Проверяем наличие границ (w:pBdr) в свойствах параграфа
         pPr = paragraph._element.find('.//w:pPr', namespaces=nsmap)
         has_borders = pPr is not None and pPr.find('.//w:pBdr', namespaces=nsmap) is not None
-        # Проверяем стиль Listing как запасной вариант
         is_listing_style = paragraph.style.name == 'Listing'
-        # print(f"Checking listing: has_borders={has_borders}, is_listing_style={is_listing_style}")
         return has_borders or is_listing_style
 
     def parse_document(self):
@@ -240,24 +234,6 @@ class ParserWord:
                     parent = stack[-1]
                     parent.append(Image(image_data, caption, paragraph, caption_paragraph, ""))
                     i += 1
-                # elif has_formula(paragraph):
-                #     formula, caption = extract_formula_and_caption(paragraph)
-                #     caption_paragraph = None
-                #     if not caption:  # Check next paragraph only if no caption in current
-                #         if (i + 1 < len(elements) and elements[i + 1].tag.endswith('p') and 
-                #             paragraph_index < len(self.doc.paragraphs) and
-                #             is_formula_caption(self.doc.paragraphs[paragraph_index])):
-                #             caption = self.doc.paragraphs[paragraph_index].text.strip()
-                #             caption_paragraph = self.doc.paragraphs[paragraph_index]
-                #             paragraph_index += 1
-                #             i += 1
-                #     if formula:
-                #         parent = stack[-1]
-                #         parent.append(Formula(formula, caption, paragraph, caption_paragraph, ""))
-                #     else:
-                #         parent = stack[-1]
-                #         parent.append(UndefinedElement(str(paragraph._element), paragraph))
-                #     i += 1
                 elif self.is_listing(paragraph):
                     listing_texts = [paragraph.text.strip() or "(empty)"]
                     listing_paragraphs = [paragraph]
@@ -471,7 +447,7 @@ class ParserWord:
 # Пример использования
 if __name__ == "__main__":
     
-    doc_path = "tst.docx"
+    doc_path = "../../tst.docx"
     doc = Document(doc_path)
     parser_wr= ParserWord(doc)
     elements_tree = parser_wr.parse_document()

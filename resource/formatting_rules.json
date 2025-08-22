@@ -2,10 +2,10 @@
   "documentFormatting": {
     "general": {
       "margins": {
-        "top": "2cm",
-        "bottom": "2cm",
-        "right": "1.5cm",
-        "left": "3cm"
+        "top": 2,
+        "bottom": 2,
+        "right": 1.5,
+        "left": 3
       },
       "font": {
         "family": "Times New Roman",
