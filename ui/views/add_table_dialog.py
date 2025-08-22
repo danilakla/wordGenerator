@@ -1,4 +1,5 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout
+from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox
+from PyQt6.QtCore import Qt
 from elements.element import Element
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -9,6 +10,7 @@ class AddTableDialog(QDialog):
     def __init__(self, tree: List[Element]):
         super().__init__()
         self.tree = tree
+        self.setWindowTitle("Добавить таблицу")
         layout = QVBoxLayout()
 
         self.caption_edit = QLineEdit()
@@ -27,6 +29,7 @@ class AddTableDialog(QDialog):
         self.parent_combo.currentIndexChanged.connect(self.update_after_combo)
 
         self.table_widget = QTableWidget(2, 2)  # Начально 2x2
+        self.table_widget.cellClicked.connect(self.on_cell_clicked)
         layout.addWidget(self.table_widget)
 
         add_layout = QHBoxLayout()
@@ -44,6 +47,46 @@ class AddTableDialog(QDialog):
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
+
+    def on_cell_clicked(self, row, col):
+        item = self.table_widget.item(row, col)
+        if not item:
+            item = QTableWidgetItem("")
+            self.table_widget.setItem(row, col, item)
+
+        # Диалог для выбора alignment
+        align_dialog = QDialog(self)
+        align_dialog.setWindowTitle("Выравнивание ячейки")
+        align_layout = QVBoxLayout()
+
+        horiz_label = QLabel("Горизонтальное выравнивание:")
+        self.horiz_combo = QComboBox()
+        self.horiz_combo.addItems(["center", "left", "right", "justify"])
+        align_layout.addWidget(horiz_label)
+        align_layout.addWidget(self.horiz_combo)
+
+        vert_label = QLabel("Вертикальное выравнивание:")
+        self.vert_combo = QComboBox()
+        self.vert_combo.addItems(["center", "top", "bottom", "both"])
+        align_layout.addWidget(vert_label)
+        align_layout.addWidget(self.vert_combo)
+
+        # Загрузить текущие значения если есть
+        data = item.data(Qt.ItemDataRole.UserRole)
+        if data:
+            self.horiz_combo.setCurrentText(data.get('horizontal', 'center'))
+            self.vert_combo.setCurrentText(data.get('vertical', 'center'))
+
+        btn_save_align = QPushButton("Сохранить")
+        btn_save_align.clicked.connect(align_dialog.accept)
+        align_layout.addWidget(btn_save_align)
+
+        align_dialog.setLayout(align_layout)
+
+        if align_dialog.exec():
+            horizontal = self.horiz_combo.currentText()
+            vertical = self.vert_combo.currentText()
+            item.setData(Qt.ItemDataRole.UserRole, {'horizontal': horizontal, 'vertical': vertical})
 
     def _populate_combo(self, combo: QComboBox, elements: List[Element], prefix: str):
         for elem in elements:
@@ -64,13 +107,28 @@ class AddTableDialog(QDialog):
         after = self.after_combo.currentData()
         caption = self.caption_edit.text()
         data = []
-        default_horizontal = WD_PARAGRAPH_ALIGNMENT.CENTER
-        default_vertical = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        WD_PARAGRAPH_ALIGNMENT_MAP = {
+            "center": WD_PARAGRAPH_ALIGNMENT.CENTER,
+            "left": WD_PARAGRAPH_ALIGNMENT.LEFT,
+            "right": WD_PARAGRAPH_ALIGNMENT.RIGHT,
+            "justify": WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        }
+        WD_CELL_VERTICAL_ALIGNMENT_MAP = {
+            "center": WD_CELL_VERTICAL_ALIGNMENT.CENTER,
+            "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
+            "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
+            "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
+        }
         for row in range(self.table_widget.rowCount()):
             row_data = []
             for col in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, col)
                 text = item.text() if item else ""
-                row_data.append(DataTable(text, default_horizontal, default_vertical))
+                align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
+                horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
+                vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
+                horizontal = WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
+                vertical = WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
+                row_data.append(DataTable(text, horizontal, vertical))
             data.append(row_data)
         return parent, after, data, caption

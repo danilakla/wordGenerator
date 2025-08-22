@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton, QTextEdit, QListWidget, QHBoxLayout, QFileDialog, QTableWidget, QTableWidgetItem
+from PyQt6.QtCore import Qt
 from elements.element import Element
 from elements.header import Header
 from elements.paragraph import Paragraph
@@ -10,10 +11,23 @@ from elements.formula import Formula
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from typing import List, Dict
-
 class EditElementDialog(QDialog):
     def __init__(self, element: Element, tree: List[Element]):
         super().__init__()
+        self.WD_PARAGRAPH_ALIGNMENT_MAP = {
+    "center":WD_PARAGRAPH_ALIGNMENT.CENTER,
+    "left": WD_PARAGRAPH_ALIGNMENT.LEFT,
+    "right": WD_PARAGRAPH_ALIGNMENT.RIGHT,
+    "justify": WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+    # Add more as needed
+}
+        self.WD_CELL_VERTICAL_ALIGNMENT_MAP = {
+    "center":WD_CELL_VERTICAL_ALIGNMENT.CENTER,
+    "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
+    "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
+    "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
+    # Add more as needed
+}
         self.element = element
         self.tree = tree
         self.fields: Dict[str, any] = {}
@@ -33,9 +47,15 @@ class EditElementDialog(QDialog):
             layout.addWidget(QLabel("Подпись:"))
             layout.addWidget(self.fields['caption'])
             self.fields['table_widget'] = QTableWidget(len(element.data), len(element.data[0]) if element.data else 0)
+            self.fields['table_widget'].cellClicked.connect(self.on_cell_clicked)
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
-                    self.fields['table_widget'].setItem(i, j, QTableWidgetItem(cell.data))
+                    item = QTableWidgetItem(cell.data)
+                    # Сохранить alignments
+                    horiz_key = next((k for k, v in self.WD_PARAGRAPH_ALIGNMENT_MAP.items() if v == cell.horizontal), 'center')
+                    vert_key = next((k for k, v in self.WD_CELL_VERTICAL_ALIGNMENT_MAP.items() if v == cell.vertical), 'center')
+                    item.setData(Qt.ItemDataRole.UserRole, {'horizontal': horiz_key, 'vertical': vert_key})
+                    self.fields['table_widget'].setItem(i, j, item)
             layout.addWidget(QLabel("Таблица:"))
             layout.addWidget(self.fields['table_widget'])
             btn_add_row = QPushButton("Добавить строку")
@@ -95,7 +115,12 @@ class EditElementDialog(QDialog):
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
-
+    def on_cell_clicked(self, row, col):
+        table_widget = self.fields['table_widget']
+        item = table_widget.item(row, col)
+        if not item:
+            item = QTableWidgetItem("")
+            table_widget.setItem(row, col, item)
     def browse_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "", "Images (*.png *.jpg *.bmp)")
         if path:
