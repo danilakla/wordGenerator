@@ -1,5 +1,5 @@
 import json
-from typing import Any, Union, Optional
+from typing import Any, Union
 
 class ConfigService:
     def __init__(self, config_source: Union[dict, str, None] = None):
@@ -91,19 +91,3 @@ class ConfigService:
         """Return the entire configuration as a JSON string."""
         return json.dumps(self.config, indent=indent, ensure_ascii=False)
 
-# # Example usage
-# if __name__ == "__main__":
-#     # Initialize with file path
-#     service = ConfigService("formatting_rules.json")
-    
-#     # Access values
-#     print(service["documentFormatting.general.margins.top"])  # "2cm"
-#     print(service.get("documentFormatting.general.font.size", "12pt"))  # "14pt" or "12pt" if not found
-    
-#     # Check existence
-#     if "documentFormatting.tables.numbering" in service:
-#         print("Table numbering format exists")
-    
-#     # Get entire config
-#     print(service.to_dict())
-#     print(service.to_json())

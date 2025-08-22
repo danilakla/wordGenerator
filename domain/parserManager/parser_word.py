@@ -1,17 +1,24 @@
 import re
 from typing import List
-from elements import DataTable, ListElement, Paragraph, UndefinedElement
-from elements import Element, Formula, Header, Image, Listing, Table
+
 import re
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 from docx import Document
-from docx.text.paragraph import Paragraph as DocxParagraph
 from docx.oxml.ns import qn, nsmap
 from lxml import etree
 
-from tree_numbering import TreeNumbering
+from elements.header import Header
+from elements.formula import Formula
+from elements.image import Image
+from elements.list_element import ListElement
+from elements.listing import Listing
+from elements.table import Table, DataTable
+from elements.paragraph import Paragraph
+
+from domain.wordManager.tree_numbering import TreeNumbering
+from elements.undefined_element import UndefinedElement
 class ParserWord:
     def __init__(self,doc):
         self.doc=doc

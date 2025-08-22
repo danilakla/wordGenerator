@@ -1,7 +1,14 @@
 import copy
 import re
 from typing import List, Optional
-from elements import Element, Formula, Header, Image, ListElement, Listing, Paragraph, Table
+from elements.element import Element
+from elements.header import Header
+from elements.formula import Formula
+from elements.image import Image
+from elements.list_element import ListElement
+from elements.listing import Listing
+from elements.table import Table
+from elements.paragraph import Paragraph
 
 class TreeNumbering:
     def __init__(self, tree: List[Element]):

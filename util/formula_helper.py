@@ -3,7 +3,7 @@ from latex2mathml.converter import convert as latex_to_mathml
 from lxml import etree
 
 class FormulaHelper:
-    def __init__(self, xslt_path="mml2omml.xsl"):
+    def __init__(self, xslt_path="resource\mml2omml.xsl"):
         # Загружаем XSLT-конвертер MathML → OMML
         xslt = etree.parse(xslt_path)
         self.transform = etree.XSLT(xslt)

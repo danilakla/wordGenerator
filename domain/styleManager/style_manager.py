@@ -1,18 +1,23 @@
 
 from typing import List
 from docx import Document
-from docx.enum.style import WD_STYLE_TYPE
-from config_service import ConfigService
-from elements import  Element, Header, Image, Table, Formula, Listing, Paragraph, ListElement
-from neighbor_finder import NeighborFinder
+from elements.element import Element
+from elements.header import Header
+from elements.formula import Formula
+from elements.image import Image
+from elements.list_element import ListElement
+from elements.listing import Listing
+from elements.table import Table
+from elements.paragraph import Paragraph
 from docx import Document
 from docx.shared import Pt, RGBColor,Inches
-from docx.enum.dml import MSO_THEME_COLOR
 from docx.enum.text import WD_ALIGN_PARAGRAPH,WD_PARAGRAPH_ALIGNMENT,WD_LINE_SPACING
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-NeighborFinder
+
+from util.config_service import ConfigService
+from util.neighbor_finder import NeighborFinder
 class StyleManager:
     
     def __init__(self, doc: Document,tree: List[Element],):
@@ -57,7 +62,7 @@ class StyleManager:
     "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
     # Add more as needed
 }
-        self.config_service = ConfigService("formatting_rules.json")
+        self.config_service = ConfigService("resource/formatting_rules.json")
         self.neighbor_finder=NeighborFinder(self.tree)
         self.doc = doc
         self._ensure_styles()
