@@ -1,7 +1,6 @@
+# document_choice.py
 from PyQt6.QtWidgets import QDialog, QRadioButton, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QHBoxLayout
-
 from services.document_service import DocumentService
-from PyQt6.QtWidgets import QDialog, QRadioButton, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QHBoxLayout
 
 class DocumentChoiceDialog(QDialog):
     def __init__(self, service: DocumentService):
@@ -11,6 +10,7 @@ class DocumentChoiceDialog(QDialog):
         layout = QVBoxLayout()
 
         self.radio_new = QRadioButton("Создать новый документ")
+        self.radio_new.setChecked(True)
         self.radio_load = QRadioButton("Загрузить существующий")
         layout.addWidget(self.radio_new)
         layout.addWidget(self.radio_load)
@@ -21,18 +21,27 @@ class DocumentChoiceDialog(QDialog):
 
         self.load_path = QLineEdit()
         self.load_path.setPlaceholderText("Путь к файлу")
-        btn_browse = QPushButton("Обзор")
-        btn_browse.clicked.connect(self.browse_file)
-        load_layout = QHBoxLayout()
-        load_layout.addWidget(self.load_path)
-        load_layout.addWidget(btn_browse)
-        layout.addLayout(load_layout)
+        self.btn_browse = QPushButton("Обзор")
+        self.btn_browse.clicked.connect(self.browse_file)
+        self.load_layout = QHBoxLayout()
+        self.load_layout.addWidget(self.load_path)
+        self.load_layout.addWidget(self.btn_browse)
+        layout.addLayout(self.load_layout)
 
         btn_ok = QPushButton("OK")
         btn_ok.clicked.connect(self.process_choice)
         layout.addWidget(btn_ok)
 
         self.setLayout(layout)
+
+        self.radio_new.toggled.connect(self.update_visibility)
+        self.radio_load.toggled.connect(self.update_visibility)
+        self.update_visibility()
+
+    def update_visibility(self):
+        self.new_name.setVisible(self.radio_new.isChecked())
+        self.load_path.setVisible(self.radio_load.isChecked())
+        self.btn_browse.setVisible(self.radio_load.isChecked())
 
     def browse_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "Word files (*.docx)")

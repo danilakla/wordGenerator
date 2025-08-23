@@ -1,11 +1,10 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox
+from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QSpinBox,QComboBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox
 from PyQt6.QtCore import Qt
 from elements.element import Element
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from elements.table import DataTable
 from typing import List, Optional
-
 class AddTableDialog(QDialog):
     def __init__(self, tree: List[Element]):
         super().__init__()
@@ -17,20 +16,33 @@ class AddTableDialog(QDialog):
         layout.addWidget(QLabel("Подпись:"))
         layout.addWidget(self.caption_edit)
 
-        self.parent_combo = QComboBox()
-        self._populate_combo(self.parent_combo, tree, "")
-        layout.addWidget(QLabel("Родитель:"))
-        layout.addWidget(self.parent_combo)
+        size_layout = QHBoxLayout()
+        self.rows_spin = QSpinBox()
+        self.rows_spin.setMinimum(1)
+        self.rows_spin.setValue(2)
+        size_layout.addWidget(QLabel("Строки:"))
+        size_layout.addWidget(self.rows_spin)
 
-        self.after_combo = QComboBox()
-        layout.addWidget(QLabel("После какого:"))
-        layout.addWidget(self.after_combo)
+        self.cols_spin = QSpinBox()
+        self.cols_spin.setMinimum(1)
+        self.cols_spin.setValue(2)
+        size_layout.addWidget(QLabel("Столбцы:"))
+        size_layout.addWidget(self.cols_spin)
 
-        self.parent_combo.currentIndexChanged.connect(self.update_after_combo)
+        btn_set_size = QPushButton("Установить размер")
+        btn_set_size.clicked.connect(self.set_table_size)
+        size_layout.addWidget(btn_set_size)
+        layout.addLayout(size_layout)
 
-        self.table_widget = QTableWidget(2, 2)  # Начально 2x2
-        self.table_widget.cellClicked.connect(self.on_cell_clicked)
+        self.table_widget = QTableWidget(0, 0)
         layout.addWidget(self.table_widget)
+
+        self.btn_align = QPushButton("Настроить выравнивание")
+        self.btn_align.clicked.connect(self.open_align_dialog)
+        self.btn_align.setEnabled(False)
+        layout.addWidget(self.btn_align)
+
+        self.table_widget.itemSelectionChanged.connect(self.update_align_button)
 
         add_layout = QHBoxLayout()
         btn_add_row = QPushButton("Добавить строку")
@@ -48,13 +60,27 @@ class AddTableDialog(QDialog):
 
         self.setLayout(layout)
 
-    def on_cell_clicked(self, row, col):
-        item = self.table_widget.item(row, col)
-        if not item:
-            item = QTableWidgetItem("")
-            self.table_widget.setItem(row, col, item)
+    def set_table_size(self):
+        rows = self.rows_spin.value()
+        cols = self.cols_spin.value()
+        self.table_widget.setRowCount(rows)
+        self.table_widget.setColumnCount(cols)
+        for r in range(rows):
+            for c in range(cols):
+                if not self.table_widget.item(r, c):
+                    item = QTableWidgetItem("")
+                    self.table_widget.setItem(r, c, item)
 
-        # Диалог для выбора alignment
+    def update_align_button(self):
+        selected = self.table_widget.selectedItems()
+        self.btn_align.setEnabled(bool(selected))
+
+    def open_align_dialog(self):
+        selected = self.table_widget.selectedItems()
+        if not selected:
+            return
+        item = selected[0]  # Take first selected
+
         align_dialog = QDialog(self)
         align_dialog.setWindowTitle("Выравнивание ячейки")
         align_layout = QVBoxLayout()
@@ -71,7 +97,6 @@ class AddTableDialog(QDialog):
         align_layout.addWidget(vert_label)
         align_layout.addWidget(self.vert_combo)
 
-        # Загрузить текущие значения если есть
         data = item.data(Qt.ItemDataRole.UserRole)
         if data:
             self.horiz_combo.setCurrentText(data.get('horizontal', 'center'))
@@ -88,23 +113,7 @@ class AddTableDialog(QDialog):
             vertical = self.vert_combo.currentText()
             item.setData(Qt.ItemDataRole.UserRole, {'horizontal': horizontal, 'vertical': vertical})
 
-    def _populate_combo(self, combo: QComboBox, elements: List[Element], prefix: str):
-        for elem in elements:
-            combo.addItem(prefix + str(type(elem).__name__) + ": " + (elem.text if hasattr(elem, 'text') else elem.caption if hasattr(elem, 'caption') else ""), elem)
-            if hasattr(elem, 'children'):
-                self._populate_combo(combo, elem.children, prefix + "  ")
-
-    def update_after_combo(self):
-        self.after_combo.clear()
-        idx = self.parent_combo.currentIndex()
-        if idx >= 0:
-            parent = self.parent_combo.itemData(idx)
-            if parent and hasattr(parent, 'children'):
-                self._populate_combo(self.after_combo, parent.children, "")
-
     def get_data(self):
-        parent = self.parent_combo.currentData()
-        after = self.after_combo.currentData()
         caption = self.caption_edit.text()
         data = []
         WD_PARAGRAPH_ALIGNMENT_MAP = {
@@ -131,4 +140,4 @@ class AddTableDialog(QDialog):
                 vertical = WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
                 row_data.append(DataTable(text, horizontal, vertical))
             data.append(row_data)
-        return parent, after, data, caption
+        return None, None, data, caption

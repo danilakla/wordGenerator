@@ -1,3 +1,5 @@
+# Updated edit_element_dialog.py with changes for Formula and Table.
+
 from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton, QTextEdit, QListWidget, QHBoxLayout, QFileDialog, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 from elements.element import Element
@@ -11,23 +13,22 @@ from elements.formula import Formula
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from typing import List, Dict
+
 class EditElementDialog(QDialog):
     def __init__(self, element: Element, tree: List[Element]):
         super().__init__()
         self.WD_PARAGRAPH_ALIGNMENT_MAP = {
-    "center":WD_PARAGRAPH_ALIGNMENT.CENTER,
-    "left": WD_PARAGRAPH_ALIGNMENT.LEFT,
-    "right": WD_PARAGRAPH_ALIGNMENT.RIGHT,
-    "justify": WD_PARAGRAPH_ALIGNMENT.JUSTIFY
-    # Add more as needed
-}
+            "center": WD_PARAGRAPH_ALIGNMENT.CENTER,
+            "left": WD_PARAGRAPH_ALIGNMENT.LEFT,
+            "right": WD_PARAGRAPH_ALIGNMENT.RIGHT,
+            "justify": WD_PARAGRAPH_ALIGNMENT.JUSTIFY
+        }
         self.WD_CELL_VERTICAL_ALIGNMENT_MAP = {
-    "center":WD_CELL_VERTICAL_ALIGNMENT.CENTER,
-    "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
-    "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
-    "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
-    # Add more as needed
-}
+            "center": WD_CELL_VERTICAL_ALIGNMENT.CENTER,
+            "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
+            "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
+            "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
+        }
         self.element = element
         self.tree = tree
         self.fields: Dict[str, any] = {}
@@ -51,24 +52,18 @@ class EditElementDialog(QDialog):
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
                     item = QTableWidgetItem(cell.data)
-                    # Сохранить alignments
                     horiz_key = next((k for k, v in self.WD_PARAGRAPH_ALIGNMENT_MAP.items() if v == cell.horizontal), 'center')
                     vert_key = next((k for k, v in self.WD_CELL_VERTICAL_ALIGNMENT_MAP.items() if v == cell.vertical), 'center')
                     item.setData(Qt.ItemDataRole.UserRole, {'horizontal': horiz_key, 'vertical': vert_key})
                     self.fields['table_widget'].setItem(i, j, item)
             layout.addWidget(QLabel("Таблица:"))
             layout.addWidget(self.fields['table_widget'])
-            btn_add_row = QPushButton("Добавить строку")
-            btn_add_row.clicked.connect(lambda: self.fields['table_widget'].setRowCount(self.fields['table_widget'].rowCount() + 1))
-            layout.addWidget(btn_add_row)
-            btn_add_col = QPushButton("Добавить столбец")
-            btn_add_col.clicked.connect(lambda: self.fields['table_widget'].setColumnCount(self.fields['table_widget'].columnCount() + 1))
-            layout.addWidget(btn_add_col)
+            # Removed add row/col buttons
         elif isinstance(element, Image):
             self.fields['caption'] = QLineEdit(element.caption)
             layout.addWidget(QLabel("Подпись:"))
             layout.addWidget(self.fields['caption'])
-            self.fields['path'] = QLineEdit()  # Предполагаем, что путь не хранится, но для редактирования允许 выбрать новый
+            self.fields['path'] = QLineEdit()
             btn_browse = QPushButton("Обзор")
             btn_browse.clicked.connect(self.browse_image)
             path_layout = QHBoxLayout()
@@ -106,21 +101,21 @@ class EditElementDialog(QDialog):
             self.fields['formula'] = QLineEdit(element.formula)
             layout.addWidget(QLabel("Формула (LaTeX):"))
             layout.addWidget(self.fields['formula'])
-            self.fields['caption'] = QLineEdit(element.caption)
-            layout.addWidget(QLabel("Подпись:"))
-            layout.addWidget(self.fields['caption'])
+            # Removed caption edit
 
         btn_save = QPushButton("Сохранить")
         btn_save.clicked.connect(self.accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
+
     def on_cell_clicked(self, row, col):
         table_widget = self.fields['table_widget']
         item = table_widget.item(row, col)
         if not item:
             item = QTableWidgetItem("")
             table_widget.setItem(row, col, item)
+
     def browse_image(self):
         path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "", "Images (*.png *.jpg *.bmp)")
         if path:
@@ -145,14 +140,17 @@ class EditElementDialog(QDialog):
         elif isinstance(self.element, Table):
             data['caption'] = self.fields['caption'].text()
             table_data = []
-            default_horizontal = WD_PARAGRAPH_ALIGNMENT.CENTER
-            default_vertical = WD_CELL_VERTICAL_ALIGNMENT.CENTER
             for row in range(self.fields['table_widget'].rowCount()):
                 row_data = []
                 for col in range(self.fields['table_widget'].columnCount()):
                     item = self.fields['table_widget'].item(row, col)
                     text = item.text() if item else ""
-                    row_data.append(DataTable(text, default_horizontal, default_vertical))
+                    align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
+                    horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
+                    vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
+                    horizontal = self.WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
+                    vertical = self.WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
+                    row_data.append(DataTable(text, horizontal, vertical))
                 table_data.append(row_data)
             data['data'] = table_data
         elif isinstance(self.element, Image):
@@ -168,5 +166,5 @@ class EditElementDialog(QDialog):
             data['items'] = [self.fields['items_list'].item(i).text() for i in range(self.fields['items_list'].count())]
         elif isinstance(self.element, Formula):
             data['formula'] = self.fields['formula'].text()
-            data['caption'] = self.fields['caption'].text()
+            # No caption
         return data

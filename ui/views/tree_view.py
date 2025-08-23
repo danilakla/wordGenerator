@@ -1,3 +1,4 @@
+# Updated tree_view.py - no changes needed, as per request.
 
 from elements.element import Element
 from elements.formula import Formula
@@ -9,7 +10,7 @@ from elements.paragraph import Paragraph
 from elements.table import Table
 from services.document_service import DocumentService
 
-from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QPushButton, QStackedWidget, QScrollArea, QLabel, QSizePolicy, QScrollBar
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QPushButton, QStackedWidget, QScrollArea, QLabel, QSizePolicy
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 from docx2pdf import convert
@@ -17,8 +18,6 @@ import tempfile
 import os
 import fitz  # PyMuPDF
 from typing import List
-from elements.element import Element
-from services.document_service import DocumentService
 
 class TreeViewWidget(QWidget):
     def __init__(self, service: DocumentService):
@@ -31,7 +30,6 @@ class TreeViewWidget(QWidget):
         self.tree.setHeaderLabel("Дерево элементов")
         self.stack.addWidget(self.tree)
 
-        # PDF view контейнер
         self.pdf_widget = QWidget()
         pdf_layout = QVBoxLayout(self.pdf_widget)
 

@@ -1,7 +1,11 @@
+# Updated main_window.py with selection logic for simple elements.
+
 from PyQt6.QtWidgets import QMainWindow, QSplitter, QMessageBox
 
 from services.document_service import DocumentService
 from ui.views.add_header_dialog import AddHeaderDialog
+from ui.views.add_list_dialog import AddListingDialog
+from ui.views.add_listing_dialog import AddListDialog
 from ui.views.add_table_dialog import AddTableDialog
 from ui.views.edit_element_dialog import EditElementDialog
 from ui.views.move_element_dialog import MoveElementDialog
@@ -9,8 +13,6 @@ from .tree_view import TreeViewWidget
 from .control_panel import ControlPanel
 from .add_paragraph_dialog import AddParagraphDialog
 from .add_image_dialog import AddImageDialog
-from .add_listing_dialog import AddListingDialog
-from .add_list_dialog import AddListDialog
 from .add_formula_dialog import AddFormulaDialog
 from PyQt6.QtCore import Qt
 
@@ -27,6 +29,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(splitter)
         self.tree_view.populate_tree()
 
+    def get_selected_element(self):
+        selected = self.tree_view.tree.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "Ошибка", "Выберите элемент в дереве, после которого нужно вставить новый элемент")
+            return None
+        return selected[0].data(0, Qt.ItemDataRole.UserRole)
+
     def add_header(self):
         dialog = AddHeaderDialog(self.service.get_tree(), is_sub=False)
         if dialog.exec():
@@ -42,45 +51,69 @@ class MainWindow(QMainWindow):
             self.tree_view.populate_tree()
 
     def add_text(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddParagraphDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, text = dialog.get_data()
-            self.service.add_paragraph(parent, text, after)
+            _, _, text = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)  # Assume service has get_parent method
+            self.service.add_paragraph(selected_elem, text, None)
             self.tree_view.populate_tree()
 
     def add_table(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddTableDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, data, caption = dialog.get_data()
-            self.service.add_table(parent, data, caption, after)
+            _, _, data, caption = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)
+            self.service.add_table(selected_elem, data, caption, None)
             self.tree_view.populate_tree()
 
     def add_image(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddImageDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, path, caption = dialog.get_data()
-            self.service.add_image(parent, path, caption, after)
+            _, _, path, caption = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)
+            self.service.add_image(selected_elem, path, caption, None)
             self.tree_view.populate_tree()
 
     def add_listing(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddListingDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, text, caption = dialog.get_data()
-            self.service.add_listing(parent, text, caption, after)
+            _, _, text, caption = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)
+            self.service.add_listing(selected_elem, text, caption)
             self.tree_view.populate_tree()
 
     def add_list(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddListDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, items, list_type = dialog.get_data()
-            self.service.add_list(parent, items, list_type, after)
+            _, _, items, list_type = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)
+            self.service.add_list(selected_elem, items, list_type, None)
             self.tree_view.populate_tree()
 
     def add_formula(self):
+        selected_elem = self.get_selected_element()
+        if not selected_elem:
+            return
         dialog = AddFormulaDialog(self.service.get_tree())
         if dialog.exec():
-            parent, after, formula, caption = dialog.get_data()
-            self.service.add_formula(parent, formula, caption, after)
+            _, _, formula, caption = dialog.get_data()
+            # parent = self.service.get_parent(selected_elem)
+            self.service.add_formula(selected_elem, formula, caption, None)
             self.tree_view.populate_tree()
 
     def remove_element(self):
