@@ -1,5 +1,6 @@
 # Updated edit_element_dialog.py with changes for Formula and Table.
 
+import re
 from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QVBoxLayout, QPushButton, QTextEdit, QListWidget, QHBoxLayout, QFileDialog, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 from elements.element import Element
@@ -132,13 +133,27 @@ class EditElementDialog(QDialog):
         if selected:
             for item in selected:
                 self.fields['items_list'].takeItem(self.fields['items_list'].row(item))
+    def extract_text_after_leading_numbers(self,text: str) -> str:
+    
+        cleaned_text = re.sub(r"^(\d+[\.\d]*\s*)+", "", text).strip()
+        return cleaned_text if cleaned_text else text
+    def clean_caption(self,caption: str) -> str:
+        patterns = [
+            r'^Таблица \d+\.\d+ – .+$',
+            r'^Рисунок \d+\.\d+ – .+$',
+            r'^Листинг \d+\.\d+ – .+$'
+        ]
 
+        # Проверяем соответствие хотя бы одному паттерну
+        if any(re.match(pattern, caption) for pattern in patterns):
+            return caption.split(" – ", 1)[-1].strip()
+        return caption
     def get_data(self) -> Dict:
         data = {}
         if isinstance(self.element, Header) or isinstance(self.element, Paragraph):
-            data['text'] = self.fields['text'].text()
+            data['text'] = self.extract_text_after_leading_numbers(self.fields['text'].text())
         elif isinstance(self.element, Table):
-            data['caption'] = self.fields['caption'].text()
+            data['caption'] = self.clean_caption(self.fields['caption'].text())
             table_data = []
             for row in range(self.fields['table_widget'].rowCount()):
                 row_data = []
@@ -154,13 +169,13 @@ class EditElementDialog(QDialog):
                 table_data.append(row_data)
             data['data'] = table_data
         elif isinstance(self.element, Image):
-            data['caption'] = self.fields['caption'].text()
+            data['caption'] = self.clean_caption(self.fields['caption'].text())
             path = self.fields['path'].text()
             if path:
                 data['image_path'] = path
         elif isinstance(self.element, Listing):
             data['text'] = self.fields['text'].toPlainText()
-            data['caption'] = self.fields['caption'].text()
+            data['caption'] = self.clean_caption(self.fields['caption'].text())
         elif isinstance(self.element, ListElement):
             data['list_type'] = self.fields['list_type'].text()
             data['items'] = [self.fields['items_list'].item(i).text() for i in range(self.fields['items_list'].count())]

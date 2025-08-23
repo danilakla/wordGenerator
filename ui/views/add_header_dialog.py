@@ -1,7 +1,9 @@
+# add_header_dialog.py
 from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton
 from typing import List
 from elements.element import Element
 from elements.header import Header
+
 class AddHeaderDialog(QDialog):
     def __init__(self, tree: List[Element], is_sub: bool):
         super().__init__()
@@ -35,6 +37,8 @@ class AddHeaderDialog(QDialog):
             layout.addWidget(self.after_combo)
 
             self.parent_combo.currentIndexChanged.connect(self.update_after_combo)
+            # Вызываем update_after_combo сразу, чтобы заполнить after_combo, если есть выбранный родитель
+            self.update_after_combo()
 
         btn_save = QPushButton("Сохранить")
         btn_save.clicked.connect(self.accept)
@@ -60,7 +64,10 @@ class AddHeaderDialog(QDialog):
         if idx >= 0:
             parent = self.parent_combo.itemData(idx)
             if parent and hasattr(parent, 'children'):
-                self._populate_combo(self.after_combo, parent.children, "")
+                # Ограничиваем отображение только подразделами на один уровень ниже (parent.level + 1)
+                for elem in parent.children:
+                    if isinstance(elem, Header) and elem.level == parent.level + 1:
+                        self.after_combo.addItem(elem.text, elem)
 
     def get_data(self):
         after = self.after_combo.currentData() if self.after_combo.currentIndex() >= 0 else None
