@@ -136,19 +136,25 @@ class WordDocumentManager:
                         insert_index = parent_element.index(insert_position) + 1
                         if element.list_type=="List Paragraph":
                             new_paragraph = self.doc.add_paragraph(item,"List Paragraph")
+                            num_pr = last_paragraph._p.pPr.numPr
+                            if new_paragraph._p.pPr is None:
+                                new_paragraph._p.get_or_add_pPr()
+                            new_paragraph._p.pPr.numPr = num_pr.__copy__()
                         else:
                             new_paragraph = self.doc.add_paragraph(item)
                         parent_element.insert(insert_index, new_paragraph._element)
+                        
                         element.docx_elements.append(new_paragraph)
-                        self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
+                        # self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
                         last_paragraph = new_paragraph
                     else:
                         # Если не было старых параграфов вообще
                         if element.list_type=="List Paragraph":
                             new_paragraph = self.doc.add_paragraph(item,"List Paragraph")
+                            # new_paragraph._p.get_or_add_pPr().numPr = last_paragraph._p.pPr.numPr
                         else:
                             new_paragraph = self.doc.add_paragraph(item)
-                        self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
+                        # self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
                         element.docx_elements.append(new_paragraph)
                         last_paragraph = new_paragraph
             
