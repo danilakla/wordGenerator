@@ -112,6 +112,8 @@ class WordDocumentManager:
             
             # Обрабатываем все элементы (старые и новые)
             for i, item in enumerate(element.items):
+                if element.list_type!="List Paragraph":
+                    item = f"{element.list_type}\u00A0{item}"
                 if i < len(old_paragraphs):
                     # Обновляем существующий параграф
                     paragraph = old_paragraphs[i]
@@ -119,28 +121,33 @@ class WordDocumentManager:
                     for run in paragraph.runs:
                         run.text = ""
                     if paragraph.runs:
-                        for run in paragraph.runs:
-                            run.text=item
+                        paragraph.runs[0].text=item
                     else:
                         paragraph.add_run(item)
                     last_paragraph = paragraph
                     element.docx_elements.append(paragraph)
                 else:
+                
                     # Добавляем новый параграф
                     if last_paragraph is not None:
                         # Вставляем после последнего обработанного параграфа
                         insert_position = last_paragraph._element
                         parent_element = insert_position.getparent()
                         insert_index = parent_element.index(insert_position) + 1
-                        
-                        new_paragraph = self.doc.add_paragraph(item)
+                        if element.list_type=="List Paragraph":
+                            new_paragraph = self.doc.add_paragraph(item,"List Paragraph")
+                        else:
+                            new_paragraph = self.doc.add_paragraph(item)
                         parent_element.insert(insert_index, new_paragraph._element)
                         element.docx_elements.append(new_paragraph)
                         self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
                         last_paragraph = new_paragraph
                     else:
                         # Если не было старых параграфов вообще
-                        new_paragraph = self.doc.add_paragraph(item)
+                        if element.list_type=="List Paragraph":
+                            new_paragraph = self.doc.add_paragraph(item,"List Paragraph")
+                        else:
+                            new_paragraph = self.doc.add_paragraph(item)
                         self.style_manager.apply_list_style(ListElement(['d'],'.',[new_paragraph]))
                         element.docx_elements.append(new_paragraph)
                         last_paragraph = new_paragraph
@@ -379,7 +386,15 @@ class WordDocumentManager:
             p = self.doc.add_paragraph(element.text)
             element.docx_element = p
         elif isinstance(element, ListElement):
-            element.docx_elements = [self.doc.add_paragraph(item) for item in element.items]
+            if element.list_type == "List Paragraph":
+                element.docx_elements = [
+                    self.doc.add_paragraph(item) for item in element.items
+                ]
+            else:
+                element.docx_elements = [
+                    self.doc.add_paragraph(f"{element.list_type}\u00A0{item}")
+                    for item in element.items
+                ]
         elif isinstance(element, Image):
             element.docx_image_paragraph = self.doc.add_paragraph()
             run = element.docx_image_paragraph.add_run()
