@@ -1,14 +1,6 @@
 from PyQt6.QtWidgets import QDialog, QLabel, QComboBox, QVBoxLayout, QPushButton, QTextEdit, QListWidget, QHBoxLayout, QFileDialog, QTableWidget, QTableWidgetItem
 from elements.element import Element
-from elements.header import Header
-from elements.paragraph import Paragraph
-from elements.table import Table, DataTable
-from elements.image import Image
-from elements.listing import Listing
-from elements.list_element import ListElement
-from elements.formula import Formula
-from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
 from typing import List, Dict
 class MoveElementDialog(QDialog):
     def __init__(self, tree: List[Element], element: Element):

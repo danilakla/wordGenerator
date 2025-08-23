@@ -52,9 +52,9 @@ class EditElementDialog(QDialog):
             layout.addWidget(QLabel("Подпись:"))
             layout.addWidget(self.fields['caption'])
         elif isinstance(element, ListElement):
-            self.fields['list_type'] = QLineEdit(element.list_type)
-            layout.addWidget(QLabel("Тип списка:"))
-            layout.addWidget(self.fields['list_type'])
+            # self.fields['list_type'] = QLineEdit(element.list_type)
+            # layout.addWidget(QLabel("Тип списка:"))
+            # layout.addWidget(self.fields['list_type'])
             self.fields['items_list'] = QListWidget()
             for item in element.items:
                 self.fields['items_list'].addItem(item)
@@ -129,7 +129,7 @@ class EditElementDialog(QDialog):
             data['text'] = self.fields['text'].toPlainText()
             data['caption'] = self.clean_caption(self.fields['caption'].text())
         elif isinstance(self.element, ListElement):
-            data['list_type'] = self.fields['list_type'].text()
+            data['list_type'] = "–"
             data['items'] = [self.fields['items_list'].item(i).text() for i in range(self.fields['items_list'].count())]
         elif isinstance(self.element, Formula):
             data['formula'] = self.fields['formula'].text()

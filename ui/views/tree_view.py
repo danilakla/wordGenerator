@@ -68,6 +68,7 @@ class TreeViewWidget(QWidget):
         self.tree.clear()
         tree = self.service.get_tree()
         self._add_items(self.tree.invisibleRootItem(), tree)
+    
 
     def _add_items(self, parent_item: QTreeWidgetItem, elements: List[Element]):
         for elem in elements:

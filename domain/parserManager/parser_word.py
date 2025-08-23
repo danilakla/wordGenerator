@@ -43,13 +43,13 @@ class ParserWord:
 
     def get_list_type(self,paragraph):
         if paragraph.style is None:
-            return 'unordered'
+            return '–'
         style_name = paragraph.style.name.lower()
         if 'bullet' in style_name:
-            return 'unordered'
+            return '*'
         elif 'number' in style_name:
-            return 'ordered'
-        return 'unordered'
+            return '1'
+        return '–'
 
     def is_table_caption(self,paragraph):
         text = paragraph.text.strip()
@@ -137,7 +137,7 @@ class ParserWord:
             if element.tag.endswith('p'):
                 if paragraph_index >= len(self.doc.paragraphs):
                     parent = stack[-1]
-                    parent.append(UndefinedElement(str(element), element))
+                    # parent.append(UndefinedElement(str(element), element))
                     i += 1
                     continue
                 paragraph = self.doc.paragraphs[paragraph_index]
@@ -174,6 +174,8 @@ class ParserWord:
                             next_paragraph_index += 1
                             j += 1
                         parent = stack[-1]
+                        if list_type == '–':
+                            list_items = [s[1:] for s in list_items]
                         parent.append(ListElement(list_items, list_type, list_paragraphs))
                         i = j
                         paragraph_index = next_paragraph_index
@@ -296,11 +298,11 @@ class ParserWord:
                         parent.append(Table(data, caption, table, caption_paragraph, ""))
                 else:
                     parent = stack[-1]
-                    parent.append(UndefinedElement(str(element), element))
+                    # parent.append(UndefinedElement(str(element), element))
                 i += 1
             else:
                 parent = stack[-1]
-                parent.append(UndefinedElement(str(element), element))
+                # parent.append(UndefinedElement(str(element), element))
                 i += 1
 
         return tree

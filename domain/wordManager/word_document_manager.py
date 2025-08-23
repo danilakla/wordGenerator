@@ -1,4 +1,5 @@
 import copy
+import datetime
 from typing import  List, Optional
 from docx import Document
 from elements.element import Element
@@ -36,6 +37,14 @@ class WordDocumentManager:
     def save_document(self, path: Optional[str] = None):
         """Сохраняет документ."""
         self.doc.save(path or self.doc_path)
+    def emergency_save(self):
+        """Сохраняет документ в аварийный файл с именем, включающим дату и время."""
+        emergency_path = f"последние_изменения.docx"
+        try:
+            self.doc.save(emergency_path)
+            return emergency_path
+        except Exception as e:
+            return None  # Если не удалось сохранить, возвращаем None
 
     def add_element(self, parent: Optional[Element], element: Element, after: Optional[Element] = None):
         """Добавляет элемент в дерево и документ."""
