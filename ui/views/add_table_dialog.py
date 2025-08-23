@@ -1,10 +1,13 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QSpinBox,QComboBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox
+from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QSpinBox, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem, QHBoxLayout, QMessageBox
 from PyQt6.QtCore import Qt
 from elements.element import Element
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from elements.table import DataTable
 from typing import List, Optional
+
+from ui.views.cell_aligment_dialog import CellAlignmentDialog
+
 class AddTableDialog(QDialog):
     def __init__(self, tree: List[Element]):
         super().__init__()
@@ -79,39 +82,14 @@ class AddTableDialog(QDialog):
         selected = self.table_widget.selectedItems()
         if not selected:
             return
-        item = selected[0]  # Take first selected
-
-        align_dialog = QDialog(self)
-        align_dialog.setWindowTitle("Выравнивание ячейки")
-        align_layout = QVBoxLayout()
-
-        horiz_label = QLabel("Горизонтальное выравнивание:")
-        self.horiz_combo = QComboBox()
-        self.horiz_combo.addItems(["center", "left", "right", "justify"])
-        align_layout.addWidget(horiz_label)
-        align_layout.addWidget(self.horiz_combo)
-
-        vert_label = QLabel("Вертикальное выравнивание:")
-        self.vert_combo = QComboBox()
-        self.vert_combo.addItems(["center", "top", "bottom", "both"])
-        align_layout.addWidget(vert_label)
-        align_layout.addWidget(self.vert_combo)
-
-        data = item.data(Qt.ItemDataRole.UserRole)
-        if data:
-            self.horiz_combo.setCurrentText(data.get('horizontal', 'center'))
-            self.vert_combo.setCurrentText(data.get('vertical', 'center'))
-
-        btn_save_align = QPushButton("Сохранить")
-        btn_save_align.clicked.connect(align_dialog.accept)
-        align_layout.addWidget(btn_save_align)
-
-        align_dialog.setLayout(align_layout)
-
+        # Используем выравнивание первой выделенной ячейки как начальное значение
+        first_item = selected[0]
+        align_dialog = CellAlignmentDialog(self, first_item.data(Qt.ItemDataRole.UserRole))
         if align_dialog.exec():
-            horizontal = self.horiz_combo.currentText()
-            vertical = self.vert_combo.currentText()
-            item.setData(Qt.ItemDataRole.UserRole, {'horizontal': horizontal, 'vertical': vertical})
+            align_data = align_dialog.get_data()
+            # Применяем выравнивание ко всем выделенным ячейкам
+            for item in selected:
+                item.setData(Qt.ItemDataRole.UserRole, align_data)
 
     def get_data(self):
         caption = self.caption_edit.text()
@@ -138,6 +116,6 @@ class AddTableDialog(QDialog):
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
                 horizontal = WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
                 vertical = WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
-                row_data.append(DataTable(text, horizontal, vertical))
+                row_data.append(DataTable(text, horizontal, vertical,1,col,row))
             data.append(row_data)
         return None, None, data, caption

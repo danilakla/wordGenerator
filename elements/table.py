@@ -48,8 +48,8 @@ class Table(Element):
                         if o!=0:
                             pr.clear()
                     if cell.paragraphs[0].runs:
-                        for i, run in enumerate(cell.paragraphs[0].runs):
-                            if i != 0:  # Пропускаем первый элемент (индекс 0)
+                        for p, run in enumerate(cell.paragraphs[0].runs):
+                            if p != 0:  # Пропускаем первый элемент (индекс 0)
                                 run.clear()
                             cell.paragraphs[0].runs[0].text=cell_data.data
                     else:

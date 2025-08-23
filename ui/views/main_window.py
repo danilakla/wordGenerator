@@ -1,7 +1,4 @@
-# Updated main_window.py with selection logic for simple elements.
-
 from PyQt6.QtWidgets import QMainWindow, QSplitter, QMessageBox
-
 from services.document_service import DocumentService
 from ui.views.add_header_dialog import AddHeaderDialog
 from ui.views.add_list_dialog import AddListingDialog
@@ -57,7 +54,6 @@ class MainWindow(QMainWindow):
         dialog = AddParagraphDialog(self.service.get_tree())
         if dialog.exec():
             _, _, text = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)  # Assume service has get_parent method
             self.service.add_paragraph(selected_elem, text, None)
             self.tree_view.populate_tree()
 
@@ -68,7 +64,6 @@ class MainWindow(QMainWindow):
         dialog = AddTableDialog(self.service.get_tree())
         if dialog.exec():
             _, _, data, caption = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)
             self.service.add_table(selected_elem, data, caption, None)
             self.tree_view.populate_tree()
 
@@ -79,7 +74,6 @@ class MainWindow(QMainWindow):
         dialog = AddImageDialog(self.service.get_tree())
         if dialog.exec():
             _, _, path, caption = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)
             self.service.add_image(selected_elem, path, caption, None)
             self.tree_view.populate_tree()
 
@@ -90,8 +84,7 @@ class MainWindow(QMainWindow):
         dialog = AddListingDialog(self.service.get_tree())
         if dialog.exec():
             _, _, text, caption = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)
-            self.service.add_listing(selected_elem, text, caption)
+            self.service.add_listing(selected_elem, text, caption, None)
             self.tree_view.populate_tree()
 
     def add_list(self):
@@ -101,7 +94,6 @@ class MainWindow(QMainWindow):
         dialog = AddListDialog(self.service.get_tree())
         if dialog.exec():
             _, _, items, list_type = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)
             self.service.add_list(selected_elem, items, list_type, None)
             self.tree_view.populate_tree()
 
@@ -112,7 +104,6 @@ class MainWindow(QMainWindow):
         dialog = AddFormulaDialog(self.service.get_tree())
         if dialog.exec():
             _, _, formula, caption = dialog.get_data()
-            # parent = self.service.get_parent(selected_elem)
             self.service.add_formula(selected_elem, formula, caption, None)
             self.tree_view.populate_tree()
 

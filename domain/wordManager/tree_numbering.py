@@ -203,7 +203,9 @@ class TreeNumbering:
             
         elif isinstance(element, Table):
             element.caption = f"Таблица {element.text_number_of_element} – {update_element.caption}"
-            element.data = copy.deepcopy(update_element.data)
+            for i, row in enumerate(element.data):
+                for j, cell in enumerate(row):
+                    cell.data = update_element.data[i][j].data
         elif isinstance(element, Formula):
             element.formula = update_element.formula
         elif isinstance(element, Listing):
