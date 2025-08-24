@@ -306,8 +306,9 @@ class ParserWord:
                     rowspan = 1
                     for k in range(i + 1, len(table.rows)):
                         try:
+                            
                             next_cell = table.cell(k, j)
-                            next_paraId=None
+                                
                             if next_cell.paragraphs:
                                 next_paraId = next_cell.paragraphs[0]._element.get(f"{{{ns['w14']}}}paraId")
 
@@ -342,7 +343,19 @@ class ParserWord:
                                 break
                         except IndexError:
                             break
-
+                if i+1==len(table.rows):
+                    
+                    bottom_left=(i,j)
+                    bottom_right = (i,j+colspan-1)
+                    top_left = (i,j)
+                    top_right = (i,j+colspan-1)
+                    visited[top_right[0]][top_right[1]] = (i,j)
+                    visited[top_left[0]][top_left[1]] = (i,j)
+                    visited[bottom_right[0]][bottom_right[1]] = (i,j)
+                    visited[bottom_left[0]][bottom_left[1]] = (i,j)
+                    for x in range(top_left[0], bottom_left[0] + 1):
+                        for y in range(top_left[1], top_right[1] + 1):
+                            visited[x][y] = (i,j)
                 # Получаем текст ячейки
                 cell_text = '\n'.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
 
