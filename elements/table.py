@@ -34,13 +34,11 @@ class Table(Element):
             for j, cell_data in enumerate(row):
                 try:
                     cell = self.docx_table.cell(i, j)
+                    cell.vertical_alignment = cell_data.vertical
                 except IndexError:
                     raise IndexError(f"Cell ({i}, {j}) is outside the table bounds")
 
-                # Очистка существующих параграфов
-                for paragraph in cell.paragraphs[1:]:
-                    paragraph.clear()
-                
+              
                 if not cell.paragraphs:
                     cell.add_paragraph(cell_data.data)
                 else:
@@ -51,10 +49,11 @@ class Table(Element):
                         for p, run in enumerate(cell.paragraphs[0].runs):
                             if p != 0:  # Пропускаем первый элемент (индекс 0)
                                 run.clear()
-                            cell.paragraphs[0].runs[0].text=cell_data.data
+                        cell.paragraphs[0].runs[0].text=cell_data.data
                     else:
                         cell.paragraphs[0].text = cell_data.data
-                    cell.paragraphs[0].alignment = cell_data.horizontal
+                cell.vertical_alignment=cell_data.vertical
+                cell.paragraphs[0].alignment = cell_data.horizontal
                         
                         
-                cell.vertical_alignment = cell_data.vertical
+                

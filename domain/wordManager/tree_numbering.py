@@ -206,6 +206,8 @@ class TreeNumbering:
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
                     cell.data = update_element.data[i][j].data
+                    cell.horizontal = update_element.data[i][j].horizontal
+                    cell.vertical = update_element.data[i][j].vertical
         elif isinstance(element, Formula):
             element.formula = update_element.formula
         elif isinstance(element, Listing):

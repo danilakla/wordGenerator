@@ -61,8 +61,7 @@ class StyleManager:
     "center":WD_CELL_VERTICAL_ALIGNMENT.CENTER,
     "top": WD_CELL_VERTICAL_ALIGNMENT.TOP,
     "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
-    "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH
-    # Add more as needed
+    "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH    # Add more as needed
 }
         self.config_service = ConfigService("resource/formatting_rules.json")
         self.neighbor_finder=NeighborFinder(self.tree)
@@ -203,6 +202,16 @@ class StyleManager:
             neighbor_after.docx_element.paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
         if isinstance(neighbor_after,ListElement):
             neighbor_after.docx_elements[0].paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.spacingBeforeTable", 0))
+    def apply_table_after_update_run(self,table:Table):
+        for row, text_row in zip(table.docx_table.rows, table.data):
+            for cell, cell_object_tab in zip(row.cells, text_row):
+                for run in cell.paragraphs[0].runs:
+                    run.font.name = self.config_service.get("documentFormatting.tables.family")  
+                    run.font.size = Pt(self.config_service.get("documentFormatting.tables.size"))   
+                    run.font.bold = self.config_service.get("documentFormatting.tables.bold")       
+                    run.font.italic = self.config_service.get("documentFormatting.tables.style.italic")  
+                    run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.tables.color")  ] 
+            
     def apply_table_style(self, table: Table):
         section = self.doc.sections[0]
         page_width = section.page_width - section.left_margin - section.right_margin

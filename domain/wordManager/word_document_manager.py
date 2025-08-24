@@ -247,7 +247,7 @@ class WordDocumentManager:
         
             # Update cell contents
             element.update_docx_table()
-
+            self.style_manager.apply_table_after_update_run(element)
             # Применяем стили к новым ячейкам
             if new_cells:  # Проверяем, что есть новые ячейки
                 self.style_manager.apply_update_table_style(new_cells,element.docx_table)
@@ -419,6 +419,8 @@ class WordDocumentManager:
             for i, row in enumerate(element.data):
                 for j, cell in enumerate(row):
                     element.docx_table.rows[i].cells[j].text = cell.data
+                    element.docx_table.rows[i].cells[j].vertical_alignment=cell.vertical
+                    element.docx_table.rows[i].cells[j].paragraphs[0]=cell.horizontal
         elif isinstance(element, Formula):
 
             # Create table with 1 row and 3 columns

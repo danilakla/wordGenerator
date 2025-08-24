@@ -114,8 +114,8 @@ class AddTableDialog(QDialog):
                 align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
                 horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
-                horizontal = WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
-                vertical = WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
+                horizontal = self.WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
+                vertical = self.WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
                 row_data.append(DataTable(text, horizontal, vertical,1,col,row))
             data.append(row_data)
         return None, None, data, caption

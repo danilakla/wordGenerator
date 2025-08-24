@@ -153,7 +153,7 @@ class EditTableDialog(QDialog):
                     item = QTableWidgetItem(cell.data)
                 else:
                     # Для неосновных ячеек создаем пустой item
-                    item = QTableWidgetItem("")
+                    item = QTableWidgetItem(cell.data)
                     item.setFlags(Qt.ItemFlag.NoItemFlags)  # Делаем ячейку недоступной для редактирования
                 
                 # Сохраняем информацию о выравнивании
@@ -202,7 +202,7 @@ class EditTableDialog(QDialog):
         table_widget = self.table_widget
         item = table_widget.item(row, col)
         if not item:
-            item = QTableWidgetItem("")
+            item = QTableWidgetItem(cell.data)
             table_widget.setItem(row, col, item)
 
     def on_item_changed(self, item):
@@ -222,7 +222,6 @@ class EditTableDialog(QDialog):
             
             self.table_widget.blockSignals(True)
             for merged_row, merged_col in merged_cells:
-                if merged_row != row or merged_col != col:  # Пропускаем основную ячейку
                     merged_item = self.table_widget.item(merged_row, merged_col)
                     if merged_item:
                         merged_item.setText(item.text())
@@ -244,34 +243,20 @@ class EditTableDialog(QDialog):
         selected = self.table_widget.selectedItems()
         if not selected:
             return
-            
-        # Проверяем, не выбраны ли ячейки из разных объединенных групп
-        selected_groups = set()
-        for item in selected:
-            row, col = self.get_item_position(item)
-            if row is not None and col is not None:
-                cell = self.table.data[row][col]
-                group_id = f"{cell.parent_row}_{cell.parent_col}" if cell.parent_row is not None and cell.parent_col is not None else f"{row}_{col}"
-                selected_groups.add(group_id)
-                
-                if len(selected_groups) > 1:
-                    QMessageBox.warning(self, "Предупреждение", 
-                                       "Нельзя одновременно редактировать выравнивание ячеек из разных объединенных групп.")
-                    return
-        
+
         # Используем выравнивание первой выделенной ячейки
         first_item = selected[0]
         align_dialog = CellAlignmentDialog(self, first_item.data(Qt.ItemDataRole.UserRole))
         if align_dialog.exec():
             align_data = align_dialog.get_data()
-            
-            # Применяем выравнивание ко всем выделенным ячейкам и их объединенным группам
+
+            # Применяем выравнивание ко всем выделенным ячейкам
             self.table_widget.blockSignals(True)
             for item in selected:
                 row, col = self.get_item_position(item)
                 if row is not None and col is not None:
                     cell = self.table.data[row][col]
-                    
+
                     # Если это объединенная группа, применяем ко всем ячейкам группы
                     if cell.parent_col is not None and cell.parent_row is not None:
                         merged_cells = self.get_merged_cells(row, col)
@@ -279,12 +264,14 @@ class EditTableDialog(QDialog):
                             merged_item = self.table_widget.item(merged_row, merged_col)
                             if merged_item:
                                 merged_item.setData(Qt.ItemDataRole.UserRole, align_data)
+                                merged_item.setText(item.text())
                     else:
                         # Одиночная ячейка
                         item.setData(Qt.ItemDataRole.UserRole, align_data)
-            
+                        merged_item.setText(item.text())
+
             self.table_widget.blockSignals(False)
-            self.table_widget.viewport().update()  # Обновляем отображение
+            self.table_widget.viewport().update()
 
     def clean_caption(self, caption: str) -> str:
         patterns = [
@@ -310,7 +297,6 @@ class EditTableDialog(QDialog):
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
                 horizontal = self.WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
                 vertical = self.WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
-                # Сохраняем parent_col и parent_row из исходной ячейки
                 orig_cell = self.table.data[row][col] if row < len(self.table.data) and col < len(self.table.data[0]) else None
                 parent_col = orig_cell.parent_col if orig_cell else None
                 parent_row = orig_cell.parent_row if orig_cell else None
