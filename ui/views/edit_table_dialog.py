@@ -10,6 +10,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from typing import Dict, Optional, List, Tuple
 
 from ui.views.cell_aligment_dialog import CellAlignmentDialog
+from util.text_util import TextUtils
 
 class BorderDelegate(QStyledItemDelegate):
     def __init__(self, table_data, parent=None):
@@ -104,7 +105,7 @@ class EditTableDialog(QDialog):
         layout = QVBoxLayout()
 
         # Подпись таблицы
-        self.caption_edit = QLineEdit(self.table.caption)
+        self.caption_edit = QLineEdit(TextUtils.clean_caption(self.table.caption))
         layout.addWidget(QLabel("Подпись:"))
         layout.addWidget(self.caption_edit)
 
@@ -273,19 +274,10 @@ class EditTableDialog(QDialog):
             self.table_widget.blockSignals(False)
             self.table_widget.viewport().update()
 
-    def clean_caption(self, caption: str) -> str:
-        patterns = [
-            r'^Таблица \d+\.\d+ – .+$',
-            r'^Рисунок \d+\.\d+ – .+$',
-            r'^Листинг \d+\.\d+ – .+$'
-        ]
-        if any(re.match(pattern, caption) for pattern in patterns):
-            return caption.split(" – ", 1)[-1].strip()
-        return caption
-
+  
     def get_data(self) -> Dict:
         data = {}
-        data['caption'] = self.clean_caption(self.caption_edit.text())
+        data['caption'] = TextUtils.clean_caption(self.caption_edit.text())
         table_data = []
         for row in range(self.table_widget.rowCount()):
             row_data = []

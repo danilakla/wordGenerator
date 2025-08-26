@@ -9,6 +9,7 @@ from elements.list_element import ListElement
 from elements.listing import Listing
 from elements.table import Table
 from elements.paragraph import Paragraph
+from util.text_util import TextUtils
 
 class TreeNumbering:
     def __init__(self, tree: List[Element]):
@@ -66,7 +67,7 @@ class TreeNumbering:
                     self.header_counters[element.level - 1] = self.header_counters[element.level - 1] + 1 if element.level <= len(self.header_counters) else 1
                 # Form header number
                 element.text_number_of_element = ".".join(map(str, self.header_counters[:element.level]))
-                element.text =f"{element.text_number_of_element} {self.extract_text_after_leading_numbers(element.text)}"
+                element.text =f"{element.text_number_of_element} {TextUtils.extract_text_after_leading_numbers(element.text)}"
                 if element.docx_element is not None and element.docx_element.text is not None:
                     for i, run in enumerate(element.docx_element.runs):
                         if i != 0:  # Пропускаем первый элемент (индекс 0)
@@ -85,48 +86,15 @@ class TreeNumbering:
                 element.text_number_of_element = f"{self.current_top_level}.{self.element_counters[element_type]}"
                 self._update_caption(element)
             # Other elements (Paragraph, ListElement, UndefinedElement) are not numbered
-    def extract_text_after_leading_numbers(self,text: str) -> str:
-        """
-        Извлекает текст, идущий после всех чисел в начале строки.
-        Если чисел нет — возвращает исходный текст.
 
-        Примеры:
-            - "1.1.1 1.1.1 текст" → "текст"
-            - "123.45 цена" → "цена"
-            - "200 руб" → "руб"
-            - "Цена 100" → "Цена 100" (число не в начале)
-            - "Просто текст" → "Просто текст"
-        """
-        # Удаляем все числа (целые, дробные, с множеством точек) в начале строки
-        cleaned_text = re.sub(r"^(\d+[\.\d]*\s*)+", "", text).strip()
-        return cleaned_text if cleaned_text else text
-    def clean_caption(self,caption: str) -> str:
-        """
-        Если строка соответствует одному из шаблонов:
-        - "Таблица X.X – ..."
-        - "Рисунок X.X – ..." 
-        - "Листинг X.X – ..."
-        возвращает только текст после " – ".
-        В противном случае возвращает строку без изменений.
-        """
-        patterns = [
-            r'^Таблица \d+\.\d+ – .+$',
-            r'^Рисунок \d+\.\d+ – .+$',
-            r'^Листинг \d+\.\d+ – .+$'
-        ]
-
-        # Проверяем соответствие хотя бы одному паттерну
-        if any(re.match(pattern, caption) for pattern in patterns):
-            return caption.split(" – ", 1)[-1].strip()
-        return caption
     def _update_caption(self, element: Element):
         """Обновляет подпись элемента с учетом номера."""
         if isinstance(element, Image):
-            element.caption = f"Рисунок {element.text_number_of_element} – {self.clean_caption(element.caption) or 'Описание'}"
+            element.caption = f"Рисунок {element.text_number_of_element} – {TextUtils.clean_caption(element.caption) or 'Описание'}"
         elif isinstance(element, Table):
-            element.caption = f"Таблица {element.text_number_of_element} – {self.clean_caption(element.caption) or 'Описание'}"
+            element.caption = f"Таблица {element.text_number_of_element} – {TextUtils.clean_caption(element.caption) or 'Описание'}"
         elif isinstance(element, Listing):
-            element.caption = f"Листинг {element.text_number_of_element} – {self.clean_caption(element.caption) or 'Описание'}"
+            element.caption = f"Листинг {element.text_number_of_element} – {TextUtils.clean_caption(element.caption) or 'Описание'}"
         elif isinstance(element, Formula):
             element.caption = f"({element.text_number_of_element})"
         if element.docx_caption_paragraph is not None and element.docx_caption_paragraph.text is not None:    

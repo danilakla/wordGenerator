@@ -14,6 +14,8 @@ from ui.views.edit_list_dialog import EditListDialog
 from ui.views.edit_formula_dialog import EditFormulaDialog
 from typing import List, Dict
 
+from util.text_util import TextUtils
+
 class EditElementDialog(QDialog):
     def __init__(self, element: Element, tree: List[Element]):
         super().__init__()
@@ -24,7 +26,7 @@ class EditElementDialog(QDialog):
         layout = QVBoxLayout()
 
         if isinstance(element, Header):
-            self.fields['text'] = QLineEdit(element.text)
+            self.fields['text'] = QLineEdit(TextUtils.extract_text_after_leading_numbers(element.text))
             layout.addWidget(QLabel("Text:"))
             layout.addWidget(self.fields['text'])
         elif isinstance(element, Paragraph):
@@ -37,7 +39,7 @@ class EditElementDialog(QDialog):
         elif isinstance(element, Image):
             self.fields['caption'] = QLineEdit(element.caption)
             layout.addWidget(QLabel("Caption:"))
-            layout.addWidget(self.fields['caption'])
+            layout.addWidget(TextUtils.clean_caption(self.fields['caption']))
             self.fields['path'] = QLineEdit()
             btn_browse = QPushButton("Browse")
             btn_browse.clicked.connect(self.browse_image)
@@ -48,7 +50,7 @@ class EditElementDialog(QDialog):
             layout.addLayout(path_layout)
         elif isinstance(element, Listing):
             self.fields['text'] = QTextEdit(element.text)
-            self.fields['caption'] = QLineEdit(element.caption)
+            self.fields['caption'] = QLineEdit(TextUtils.clean_caption(element.caption))
             layout.addWidget(QLabel("Content:"))
             layout.addWidget(self.fields['text'])
             layout.addWidget(QLabel("Caption:"))
@@ -72,34 +74,21 @@ class EditElementDialog(QDialog):
         if file_name:
             self.fields['path'].setText(file_name)
 
-    def extract_text_after_leading_numbers(self, text: str) -> str:
-        cleaned_text = re.sub(r"^(\d+[\.\d]*\s*)+", "", text).strip()
-        return cleaned_text if cleaned_text else text
-
-    def clean_caption(self, caption: str) -> str:
-        patterns = [
-             r'^Таблица \d+\.\d+ – .+$',
-            r'^Рисунок \d+\.\d+ – .+$',
-            r'^Листинг \d+\.\d+ – .+$'
-        ]
-        if any(re.match(pattern, caption) for pattern in patterns):
-            return caption.split(" – ", 1)[-1].strip()
-        return caption
 
     def get_data(self) -> Dict:
         data = {}
         if isinstance(self.element, Header) or isinstance(self.element, Paragraph):
-            data['text'] = self.extract_text_after_leading_numbers(self.fields['text'].text())
+            data['text'] = TextUtils.extract_text_after_leading_numbers(self.fields['text'].text())
         elif isinstance(self.element, Table):
             data = self.fields['table_dialog'].get_data()
         elif isinstance(self.element, Image):
-            data['caption'] = self.clean_caption(self.fields['caption'].text())
+            data['caption'] = TextUtils.clean_caption(self.fields['caption'].text())
             path = self.fields['path'].text()
             if path:
                 data['image_path'] = path
         elif isinstance(self.element, Listing):
             data['text'] = self.fields['text'].toPlainText()
-            data['caption'] = self.clean_caption(self.fields['caption'].text())
+            data['caption'] = TextUtils.clean_caption(self.fields['caption'].text())
         elif isinstance(self.element, ListElement):
             data = self.fields['list_dialog'].get_data()
         elif isinstance(self.element, Formula):
