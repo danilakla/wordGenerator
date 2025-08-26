@@ -1,5 +1,5 @@
 import re
-from PyQt6.QtWidgets import QDialog, QHBoxLayout,QLabel, QLineEdit, QVBoxLayout, QPushButton, QTextEdit, QFileDialog
+from PyQt6.QtWidgets import QDialog, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QPushButton, QTextEdit, QFileDialog
 from PyQt6.QtCore import Qt
 from elements.element import Element
 from elements.header import Header
@@ -11,6 +11,7 @@ from elements.list_element import ListElement
 from elements.formula import Formula
 from ui.views.edit_table_dialog import EditTableDialog
 from ui.views.edit_list_dialog import EditListDialog
+from ui.views.edit_formula_dialog import EditFormulaDialog
 from typing import List, Dict
 
 class EditElementDialog(QDialog):
@@ -19,56 +20,55 @@ class EditElementDialog(QDialog):
         self.element = element
         self.tree = tree
         self.fields: Dict[str, any] = {}
-        self.setWindowTitle(f"Редактировать {type(element).__name__}")
+        self.setWindowTitle(f"Edit {type(element).__name__}")
         layout = QVBoxLayout()
 
         if isinstance(element, Header):
             self.fields['text'] = QLineEdit(element.text)
-            layout.addWidget(QLabel("Текст:"))
+            layout.addWidget(QLabel("Text:"))
             layout.addWidget(self.fields['text'])
         elif isinstance(element, Paragraph):
             self.fields['text'] = QLineEdit(element.text)
-            layout.addWidget(QLabel("Текст:"))
+            layout.addWidget(QLabel("Text:"))
             layout.addWidget(self.fields['text'])
         elif isinstance(element, Table):
             dialog = EditTableDialog(element)
             self.fields['table_dialog'] = dialog
         elif isinstance(element, Image):
             self.fields['caption'] = QLineEdit(element.caption)
-            layout.addWidget(QLabel("Подпись:"))
+            layout.addWidget(QLabel("Caption:"))
             layout.addWidget(self.fields['caption'])
             self.fields['path'] = QLineEdit()
-            btn_browse = QPushButton("Обзор")
+            btn_browse = QPushButton("Browse")
             btn_browse.clicked.connect(self.browse_image)
             path_layout = QHBoxLayout()
             path_layout.addWidget(self.fields['path'])
             path_layout.addWidget(btn_browse)
-            layout.addWidget(QLabel("Новый путь к картинке (опционально):"))
+            layout.addWidget(QLabel("New image path (optional):"))
             layout.addLayout(path_layout)
         elif isinstance(element, Listing):
             self.fields['text'] = QTextEdit(element.text)
             self.fields['caption'] = QLineEdit(element.caption)
-            layout.addWidget(QLabel("Содержимое:"))
+            layout.addWidget(QLabel("Content:"))
             layout.addWidget(self.fields['text'])
-            layout.addWidget(QLabel("Подпись:"))
+            layout.addWidget(QLabel("Caption:"))
             layout.addWidget(self.fields['caption'])
         elif isinstance(element, ListElement):
             dialog = EditListDialog(element)
             self.fields['list_dialog'] = dialog
         elif isinstance(element, Formula):
-            self.fields['formula'] = QLineEdit(element.formula)
-            layout.addWidget(QLabel("Формула:"))
-            layout.addWidget(self.fields['formula'])
+            dialog = EditFormulaDialog(element)
+            self.fields['formula_dialog'] = dialog
 
-        if not isinstance(element, (Table, ListElement)):
-            btn_save = QPushButton("Сохранить")
+        if not isinstance(element, (Table, ListElement, Formula)):
+            btn_save = QPushButton("Save")
             btn_save.clicked.connect(self.accept)
             layout.addWidget(btn_save)
 
         self.setLayout(layout)
 
     def browse_image(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "", "Images (*.png *.jpg *.jpeg *.bmp)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Images (*.png *.jpg *.jpeg *.bmp)")
         if file_name:
             self.fields['path'].setText(file_name)
 
@@ -78,9 +78,9 @@ class EditElementDialog(QDialog):
 
     def clean_caption(self, caption: str) -> str:
         patterns = [
-            r'^Таблица \d+\.\d+ – .+$',
-            r'^Рисунок \d+\.\d+ – .+$',
-            r'^Листинг \d+\.\d+ – .+$'
+            r'^Table \d+\.\d+ – .+$',
+            r'^Figure \d+\.\d+ – .+$',
+            r'^Listing \d+\.\d+ – .+$'
         ]
         if any(re.match(pattern, caption) for pattern in patterns):
             return caption.split(" – ", 1)[-1].strip()
@@ -103,10 +103,10 @@ class EditElementDialog(QDialog):
         elif isinstance(self.element, ListElement):
             data = self.fields['list_dialog'].get_data()
         elif isinstance(self.element, Formula):
-            data['formula'] = self.fields['formula'].text()
+            data = self.fields['formula_dialog'].get_data()
         return data
 
     def exec(self):
-        if isinstance(self.element, (Table, ListElement)):
-            return self.fields['table_dialog' if isinstance(self.element, Table) else 'list_dialog'].exec()
+        if isinstance(self.element, (Table, ListElement, Formula)):
+            return self.fields['table_dialog' if isinstance(self.element, Table) else 'list_dialog' if isinstance(self.element, ListElement) else 'formula_dialog'].exec()
         return super().exec()
