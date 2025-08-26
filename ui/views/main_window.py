@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.service = service
         self.setWindowTitle("Word Document Manager")
+        
         splitter = QSplitter()
         self.tree_view = TreeViewWidget(service)
         splitter.addWidget(self.tree_view)

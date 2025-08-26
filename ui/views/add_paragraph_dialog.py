@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton
+from PyQt6.QtWidgets import QDialog, QLabel, QTextEdit, QVBoxLayout, QPushButton
 from elements.element import Element
 from typing import List, Optional
 
@@ -7,9 +7,10 @@ class AddParagraphDialog(QDialog):
         super().__init__()
         self.tree = tree
         self.setWindowTitle("Добавить текст")
+        self.resize(600, 400)  # Увеличиваем размер окна
         layout = QVBoxLayout()
 
-        self.text_edit = QLineEdit()
+        self.text_edit = QTextEdit()  # Заменяем QLineEdit на QTextEdit
         layout.addWidget(QLabel("Текст:"))
         layout.addWidget(self.text_edit)
 
@@ -20,5 +21,5 @@ class AddParagraphDialog(QDialog):
         self.setLayout(layout)
 
     def get_data(self) -> tuple[Optional[Element], Optional[Element], str]:
-        text = self.text_edit.text()
+        text = self.text_edit.toPlainText()  # Изменяем метод получения текста
         return None, None, text

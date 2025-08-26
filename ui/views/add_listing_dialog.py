@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton, QListWidget, QHBoxLayout
+from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QTextEdit, QVBoxLayout, QPushButton, QListWidget, QHBoxLayout
 from elements.element import Element
 from typing import List, Optional
 class AddListingDialog(QDialog):
@@ -6,9 +6,10 @@ class AddListingDialog(QDialog):
         super().__init__()
         self.tree = tree
         self.setWindowTitle("Добавить листинг")
+        self.resize(600, 500)  # Увеличиваем размер окна
         layout = QVBoxLayout()
 
-        self.text_edit = QLineEdit()
+        self.text_edit = QTextEdit()  # Заменяем QLineEdit на QTextEdit
         layout.addWidget(QLabel("Содержимое:"))
         layout.addWidget(self.text_edit)
 
@@ -23,6 +24,6 @@ class AddListingDialog(QDialog):
         self.setLayout(layout)
 
     def get_data(self):
-        text = self.text_edit.text()
+        text = self.text_edit.toPlainText()  # Изменяем метод получения текста
         caption = self.caption_edit.text()
         return None, None, text, caption

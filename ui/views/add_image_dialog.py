@@ -7,7 +7,7 @@ class AddImageDialog(QDialog):
         self.tree = tree
         self.setWindowTitle("Добавить рисунок")
         layout = QVBoxLayout()
-
+        self.resize(300,200)
         self.caption_edit = QLineEdit()
         layout.addWidget(QLabel("Подпись:"))
         layout.addWidget(self.caption_edit)

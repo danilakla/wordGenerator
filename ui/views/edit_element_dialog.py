@@ -16,6 +16,7 @@ from typing import List, Dict
 
 from util.text_util import TextUtils
 
+
 class EditElementDialog(QDialog):
     def __init__(self, element: Element, tree: List[Element]):
         super().__init__()
@@ -29,17 +30,23 @@ class EditElementDialog(QDialog):
             self.fields['text'] = QLineEdit(TextUtils.extract_text_after_leading_numbers(element.text))
             layout.addWidget(QLabel("Text:"))
             layout.addWidget(self.fields['text'])
+            self.resize(300,150)  # Увеличиваем размер диалога формулы
+
         elif isinstance(element, Paragraph):
-            self.fields['text'] = QLineEdit(element.text)
+            self.fields['text'] = QTextEdit(element.text)  # Заменяем QLineEdit на QTextEdit
             layout.addWidget(QLabel("Text:"))
             layout.addWidget(self.fields['text'])
+            self.resize(800, 600)  # Увеличиваем размер диалога формулы
+            
         elif isinstance(element, Table):
             dialog = EditTableDialog(element)
+            dialog.resize(800, 600)  # Увеличиваем размер диалога таблицы
             self.fields['table_dialog'] = dialog
         elif isinstance(element, Image):
+            self.resize(300,200)
             self.fields['caption'] = QLineEdit(element.caption)
             layout.addWidget(QLabel("Caption:"))
-            layout.addWidget(TextUtils.clean_caption(self.fields['caption']))
+            layout.addWidget(self.fields['caption'])
             self.fields['path'] = QLineEdit()
             btn_browse = QPushButton("Browse")
             btn_browse.clicked.connect(self.browse_image)
@@ -49,17 +56,20 @@ class EditElementDialog(QDialog):
             layout.addWidget(QLabel("New image path (optional):"))
             layout.addLayout(path_layout)
         elif isinstance(element, Listing):
-            self.fields['text'] = QTextEdit(element.text)
+            self.fields['text'] = QTextEdit(element.text)  # Заменяем QTextEdit на QTextEdit
             self.fields['caption'] = QLineEdit(TextUtils.clean_caption(element.caption))
             layout.addWidget(QLabel("Content:"))
             layout.addWidget(self.fields['text'])
             layout.addWidget(QLabel("Caption:"))
             layout.addWidget(self.fields['caption'])
+            self.resize(800, 600)
         elif isinstance(element, ListElement):
             dialog = EditListDialog(element)
+            dialog.resize(500, 400)  # Увеличиваем размер диалога списка
             self.fields['list_dialog'] = dialog
         elif isinstance(element, Formula):
             dialog = EditFormulaDialog(element)
+            dialog.resize(300,250)  # Увеличиваем размер диалога формулы
             self.fields['formula_dialog'] = dialog
 
         if not isinstance(element, (Table, ListElement, Formula)):
@@ -74,11 +84,12 @@ class EditElementDialog(QDialog):
         if file_name:
             self.fields['path'].setText(file_name)
 
-
     def get_data(self) -> Dict:
         data = {}
-        if isinstance(self.element, Header) or isinstance(self.element, Paragraph):
+        if isinstance(self.element, Header):
             data['text'] = TextUtils.extract_text_after_leading_numbers(self.fields['text'].text())
+        elif isinstance(self.element, Paragraph):
+            data['text'] = self.fields['text'].toPlainText()  # Изменяем метод получения текста
         elif isinstance(self.element, Table):
             data = self.fields['table_dialog'].get_data()
         elif isinstance(self.element, Image):
@@ -87,7 +98,7 @@ class EditElementDialog(QDialog):
             if path:
                 data['image_path'] = path
         elif isinstance(self.element, Listing):
-            data['text'] = self.fields['text'].toPlainText()
+            data['text'] = self.fields['text'].toPlainText()  # Изменяем метод получения текста
             data['caption'] = TextUtils.clean_caption(self.fields['caption'].text())
         elif isinstance(self.element, ListElement):
             data = self.fields['list_dialog'].get_data()

@@ -18,7 +18,7 @@ if __name__ == "__main__":
             doc_choice = DocumentChoiceDialog(service)
             if doc_choice.exec():
                 main_window = MainWindow(service)
-                main_window.show()
+                main_window.showMaximized()
                 splash.close()
                 sys.exit(app.exec())
         else:

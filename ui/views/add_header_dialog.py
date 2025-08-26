@@ -1,4 +1,3 @@
-# add_header_dialog.py
 from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton
 from typing import List
 from elements.element import Element
@@ -10,6 +9,7 @@ class AddHeaderDialog(QDialog):
         self.tree = tree
         self.is_sub = is_sub
         self.setWindowTitle("Добавить раздел" if not is_sub else "Добавить подраздел")
+        self.resize(300,150)
         layout = QVBoxLayout()
 
         self.text_edit = QLineEdit()
@@ -17,7 +17,6 @@ class AddHeaderDialog(QDialog):
         layout.addWidget(self.text_edit)
 
         if not is_sub:
-            # Level is always 1, no parent, after top-level headers
             self.level = 1
             self.parent_combo = None
             self.after_combo = QComboBox()
@@ -25,7 +24,6 @@ class AddHeaderDialog(QDialog):
             layout.addWidget(QLabel("После какого:"))
             layout.addWidget(self.after_combo)
         else:
-            # Level = parent.level + 1, parent combo, after children
             self.level_combo = None
             self.parent_combo = QComboBox()
             self._populate_combo(self.parent_combo, tree, "")
@@ -37,7 +35,6 @@ class AddHeaderDialog(QDialog):
             layout.addWidget(self.after_combo)
 
             self.parent_combo.currentIndexChanged.connect(self.update_after_combo)
-            # Вызываем update_after_combo сразу, чтобы заполнить after_combo, если есть выбранный родитель
             self.update_after_combo()
 
         btn_save = QPushButton("Сохранить")
@@ -64,7 +61,6 @@ class AddHeaderDialog(QDialog):
         if idx >= 0:
             parent = self.parent_combo.itemData(idx)
             if parent and hasattr(parent, 'children'):
-                # Ограничиваем отображение только подразделами на один уровень ниже (parent.level + 1)
                 for elem in parent.children:
                     if isinstance(elem, Header) and elem.level == parent.level + 1:
                         self.after_combo.addItem(elem.text, elem)
