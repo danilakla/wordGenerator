@@ -98,20 +98,24 @@ class TreeViewWidget(QWidget):
             self.clear_pdf_pages()
             self.is_pdf_mode = False
         else:
-            self.service.save_document()
             self.show_pdf()
             self.stack.setCurrentIndex(1)
             self.is_pdf_mode = True
 
     def show_pdf(self):
         temp_pdf_path = None
+        temp_wrd_path =None
         try:
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_pdf:
                 temp_pdf_path = temp_pdf.name
-
-            convert(self.service.get_doc_path(), temp_pdf_path)
+                
+            with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_wrd:
+                temp_wrd_path = temp_wrd.name
+            self.service.temp_save_d(temp_wrd_path)
+            convert(temp_wrd_path, temp_pdf_path)
 
             self.temp_files_to_cleanup.append(temp_pdf_path)
+            self.temp_files_to_cleanup.append(temp_wrd_path)
             self.current_pdf_path = temp_pdf_path
 
             self.load_all_pdf_pages()

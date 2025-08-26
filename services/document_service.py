@@ -37,6 +37,11 @@ class DocumentService:
 
     def save_document(self):
         self.manager.save_document(self.doc_path)
+        
+    def temp_save_d(self,temp_d):
+        self.manager.save_document(temp_d)
+        
+        
     def emergency_save(self):
         return self.manager.emergency_save()
     

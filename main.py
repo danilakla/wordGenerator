@@ -9,17 +9,26 @@ from ui.views.main_window import MainWindow
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     service = DocumentService()
+    try:
+        splash = SplashScreen()
+        splash.show()
 
-    splash = SplashScreen()
-    splash.show()
-
-    folder_dialog = FolderSelectionDialog(service)
-    if folder_dialog.exec():
-        doc_choice = DocumentChoiceDialog(service)
-        if doc_choice.exec():
-            main_window = MainWindow(service)
-            main_window.show()
-            splash.close()
-            sys.exit(app.exec())
-    else:
-        sys.exit(0)
+        folder_dialog = FolderSelectionDialog(service)
+        if folder_dialog.exec():
+            doc_choice = DocumentChoiceDialog(service)
+            if doc_choice.exec():
+                main_window = MainWindow(service)
+                main_window.show()
+                splash.close()
+                sys.exit(app.exec())
+        else:
+            sys.exit(0)
+    except Exception as e:
+        # Логирование в консоль
+        import traceback
+        traceback.print_exc()
+        
+        # Показ пользователю
+        service.emergency_save(f"Произошла непредвиденная ошибка:\n{e}")
+        
+        sys.exit(1)

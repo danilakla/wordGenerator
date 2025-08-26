@@ -36,7 +36,12 @@ class WordDocumentManager:
 
     def save_document(self, path: Optional[str] = None):
         """Сохраняет документ."""
-        self.doc.save(path or self.doc_path)
+        try:
+            self.doc.save(path or self.doc_path)
+        except PermissionError:
+            raise PermissionError("Ошибка: закройте файл перед сохранением.")
+        except Exception as e:
+            raise RuntimeError(f"Не удалось сохранить документ: {e}")
     def emergency_save(self):
         """Сохраняет документ в аварийный файл с именем, включающим дату и время."""
         emergency_path = f"последние_изменения.docx"

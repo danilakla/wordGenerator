@@ -78,9 +78,9 @@ class EditElementDialog(QDialog):
 
     def clean_caption(self, caption: str) -> str:
         patterns = [
-            r'^Table \d+\.\d+ – .+$',
-            r'^Figure \d+\.\d+ – .+$',
-            r'^Listing \d+\.\d+ – .+$'
+             r'^Таблица \d+\.\d+ – .+$',
+            r'^Рисунок \d+\.\d+ – .+$',
+            r'^Листинг \d+\.\d+ – .+$'
         ]
         if any(re.match(pattern, caption) for pattern in patterns):
             return caption.split(" – ", 1)[-1].strip()
