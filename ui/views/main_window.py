@@ -68,8 +68,9 @@ class MainWindow(QMainWindow):
                 return
             dialog = AddParagraphDialog(self.service.get_tree())
             if dialog.exec():
-                _, _, text = dialog.get_data()
-                self.service.add_paragraph(selected_elem, text, None)
+                _, _, paragraphs = dialog.get_data()
+                for paragraph_text in paragraphs:
+                    selected_elem=self.service.add_paragraph(selected_elem, paragraph_text, None)
                 self.tree_view.populate_tree()
         except Exception as e:
             self.handle_error(e)

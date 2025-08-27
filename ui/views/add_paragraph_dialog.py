@@ -22,4 +22,9 @@ class AddParagraphDialog(QDialog):
 
     def get_data(self) -> tuple[Optional[Element], Optional[Element], str]:
         text = self.text_edit.toPlainText()  # Изменяем метод получения текста
-        return None, None, text
+        paragraphs = text.split('\n')
+        
+        # Убираем пустые абзацы (если пользователь оставил пустые строки)
+        paragraphs = [p.strip() for p in paragraphs if p.strip()]
+        
+        return None, None, paragraphs

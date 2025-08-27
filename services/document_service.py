@@ -68,6 +68,7 @@ class DocumentService:
     def add_paragraph(self, parent: Optional[Element], text: str, after: Optional[Element] = None):
         paragraph = Paragraph(text=text)
         self.manager.add_element(parent, paragraph, after)
+        return paragraph
 
     def add_table(self, parent: Optional[Element], data: List[List[DataTable]], caption: str, after: Optional[Element] = None):
         table = Table(data=data, caption=caption)
