@@ -21,17 +21,17 @@ class AddHeaderDialog(QDialog):
             self.parent_combo = None
             self.after_combo = QComboBox()
             self._populate_after_combo_for_top_level(self.after_combo, tree)
-            layout.addWidget(QLabel("После какого:"))
+            layout.addWidget(QLabel("Укажите, после какого раздела он должен появиться:"))
             layout.addWidget(self.after_combo)
         else:
             self.level_combo = None
             self.parent_combo = QComboBox()
             self._populate_combo(self.parent_combo, tree, "")
-            layout.addWidget(QLabel("Родитель:"))
+            layout.addWidget(QLabel("Выберите раздел, в который хотите добавить новый :"))
             layout.addWidget(self.parent_combo)
 
             self.after_combo = QComboBox()
-            layout.addWidget(QLabel("После какого:"))
+            layout.addWidget(QLabel("Укажите, после какого раздела он должен появиться:"))
             layout.addWidget(self.after_combo)
 
             self.parent_combo.currentIndexChanged.connect(self.update_after_combo)

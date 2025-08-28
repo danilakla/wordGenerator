@@ -28,13 +28,13 @@ class EditElementDialog(QDialog):
 
         if isinstance(element, Header):
             self.fields['text'] = QLineEdit(TextUtils.extract_text_after_leading_numbers(element.text))
-            layout.addWidget(QLabel("Text:"))
+            layout.addWidget(QLabel("""Название:"""))
             layout.addWidget(self.fields['text'])
-            self.resize(300,150)  # Увеличиваем размер диалога формулы
+            self.resize(300,100)  # Увеличиваем размер диалога формулы
 
         elif isinstance(element, Paragraph):
             self.fields['text'] = QTextEdit(element.text)  # Заменяем QLineEdit на QTextEdit
-            layout.addWidget(QLabel("Text:"))
+            layout.addWidget(QLabel("""Текст: (При редактировании текста просто вносите изменения — новые абзацы создавать не нужно.)"""))
             layout.addWidget(self.fields['text'])
             self.resize(800, 600)  # Увеличиваем размер диалога формулы
             
@@ -45,7 +45,7 @@ class EditElementDialog(QDialog):
         elif isinstance(element, Image):
             self.resize(300,200)
             self.fields['caption'] = QLineEdit(element.caption)
-            layout.addWidget(QLabel("Caption:"))
+            layout.addWidget(QLabel("Подпись:"))
             layout.addWidget(self.fields['caption'])
             self.fields['path'] = QLineEdit()
             btn_browse = QPushButton("Browse")
@@ -53,14 +53,14 @@ class EditElementDialog(QDialog):
             path_layout = QHBoxLayout()
             path_layout.addWidget(self.fields['path'])
             path_layout.addWidget(btn_browse)
-            layout.addWidget(QLabel("New image path (optional):"))
+            layout.addWidget(QLabel("Путь к картинке:"))
             layout.addLayout(path_layout)
         elif isinstance(element, Listing):
             self.fields['text'] = QTextEdit(element.text)  # Заменяем QTextEdit на QTextEdit
             self.fields['caption'] = QLineEdit(TextUtils.clean_caption(element.caption))
-            layout.addWidget(QLabel("Content:"))
+            layout.addWidget(QLabel("Содержимое: Укажите скрипт (код)."))
             layout.addWidget(self.fields['text'])
-            layout.addWidget(QLabel("Caption:"))
+            layout.addWidget(QLabel("Подпись:"))
             layout.addWidget(self.fields['caption'])
             self.resize(800, 600)
         elif isinstance(element, ListElement):
@@ -69,7 +69,7 @@ class EditElementDialog(QDialog):
             self.fields['list_dialog'] = dialog
         elif isinstance(element, Formula):
             dialog = EditFormulaDialog(element)
-            dialog.resize(300,250)  # Увеличиваем размер диалога формулы
+            dialog.resize(300,150)  # Увеличиваем размер диалога формулы
             self.fields['formula_dialog'] = dialog
 
         if not isinstance(element, (Table, ListElement, Formula)):

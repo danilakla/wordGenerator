@@ -156,23 +156,23 @@ class MainWindow(QMainWindow):
             elem_type = type(elem).__name__
             elem_description = ""
             if isinstance(elem, Header):
-                elem_description = f"Заголовок: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
+                elem_description = f"Раздел: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
             elif isinstance(elem, Paragraph):
-                elem_description = f"Параграф: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
+                elem_description = f"Обычный Текст: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
             elif isinstance(elem, Table):
                 elem_description = f"Таблица: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
             elif isinstance(elem, Image):
-                elem_description = f"Изображение: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
+                elem_description = f"Рисунок: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
             elif isinstance(elem, Listing):
                 elem_description = f"Листинг: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
             elif isinstance(elem, ListElement):
                 elem_description = f"Список: {elem.list_type} (элементов: {len(elem.items)})"
             elif isinstance(elem, Formula):
-                elem_description = f"Формула: {elem.formula[:50]}" + ("..." if len(elem.formula) > 50 else "")
+                elem_description = f"Формула: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
 
             # Проверяем наличие дочерних элементов для заголовков
             if isinstance(elem, Header) and elem.children:
-                QMessageBox.warning(self, "Ошибка", f"Нельзя удалить заголовок '{elem_description}' с дочерними элементами")
+                QMessageBox.warning(self, "Ошибка", f"Нельзя удалить Раздел '{elem_description}' с дочерними элементами")
                 return
 
             # Диалог подтверждения

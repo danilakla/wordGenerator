@@ -8,18 +8,27 @@ class AddListDialog(QDialog):
         self.tree = tree
         self.setWindowTitle("Добавить список")
         layout = QVBoxLayout()
-
+        layout.addWidget(QLabel(
+            "Чтобы отредактировать: введите новый текст, выделите элемент и нажмите 'Редактировать'."
+            "\nЧтобы удалить: выберите элемент и нажмите 'Удалить'."
+        ))
         self.items_list = QListWidget()
         layout.addWidget(QLabel("Элементы списка:"))
         layout.addWidget(self.items_list)
 
         add_item_layout = QHBoxLayout()
         self.item_edit = QLineEdit()
+        self.item_edit.setPlaceholderText("Введите текст нового элемента или новый текст для редактирования")
+            
         btn_add_item = QPushButton("Добавить элемент")
+        btn_add_item.setToolTip("Введите текст и нажмите, чтобы добавить новый элемент")
         btn_add_item.clicked.connect(self.add_item)
         btn_edit_item = QPushButton("Редактировать элемент")
+        btn_edit_item.setToolTip("Введите новый текст, выберите элемент и нажмите для замены")
         btn_edit_item.clicked.connect(self.edit_item)
+        
         btn_remove_item = QPushButton("Удалить элемент")
+        btn_remove_item.setToolTip("Выберите элемент в списке и нажмите, чтобы удалить его")
         btn_remove_item.clicked.connect(self.remove_item)
         add_item_layout.addWidget(self.item_edit)
         add_item_layout.addWidget(btn_add_item)

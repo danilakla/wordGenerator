@@ -11,7 +11,9 @@ class AddParagraphDialog(QDialog):
         layout = QVBoxLayout()
 
         self.text_edit = QTextEdit()  # Заменяем QLineEdit на QTextEdit
-        layout.addWidget(QLabel("Текст:"))
+        layout.addWidget(QLabel("""Текст: (Нажмите Enter, чтобы начать новый абзац. 
+                                Каждый раз, когда вы нажимаете Enter, программа воспринимает текст дальше как отдельный параграф. 
+                                Так можно легко написать несколько абзацев подряд.)"""))
         layout.addWidget(self.text_edit)
 
         btn_save = QPushButton("Сохранить")

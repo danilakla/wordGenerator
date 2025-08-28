@@ -21,11 +21,21 @@ class MoveElementDialog(QDialog):
         self.is_header = isinstance(element, Header)
         layout = QVBoxLayout()
 
-        layout.addWidget(QLabel("Select insertion point:"))
+        if self.is_header:
+            label_text = "Выберите раздел/подраздел, который будет являться родительским"
+        else:
+            label_text = "Выберите после какого элемента нужно расположить ранее выбранный элемент."
+
+        layout.addWidget (QLabel(label_text))
 
         self.parent_tree = QTreeWidget()
         self.parent_tree.setHeaderLabel("Tree")
-        self._populate_tree(self.parent_tree.invisibleRootItem(), tree)
+        if self.is_header:
+           self._populate_tree_for_header(self.parent_tree.invisibleRootItem(), tree)
+        
+        else:
+           self._populate_tree(self.parent_tree.invisibleRootItem(), tree)
+        
         if self.is_header:
             root_item = QTreeWidgetItem(self.parent_tree)
             root_item.setText(0, "Root (None)")
@@ -36,7 +46,7 @@ class MoveElementDialog(QDialog):
         self.parent_tree.itemSelectionChanged.connect(self.update_after_list)
 
         if self.is_header:
-            layout.addWidget(QLabel("After which element:"))
+            layout.addWidget(QLabel("Пожалуйста, выберите элемент, после которого вы хотите добавить новый:"))
             self.after_list = QListWidget()
             layout.addWidget(self.after_list)
         else:
@@ -58,6 +68,16 @@ class MoveElementDialog(QDialog):
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsSelectable)
             if hasattr(elem, 'children'):
                 self._populate_tree(item, elem.children)
+    def _populate_tree_for_header(self, parent_item: QTreeWidgetItem, elements: List[Element]):
+        for elem in elements:
+            if elem == self.element or not isinstance(elem,Header):
+                continue
+            item = QTreeWidgetItem(parent_item)
+            item.setText(0, self._get_element_text(elem))
+            item.setData(0, Qt.ItemDataRole.UserRole, elem)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsSelectable)
+            if hasattr(elem, 'children'):
+                self._populate_tree_for_header(item, elem.children)
 
     def update_after_list(self):
         if not self.is_header:
@@ -82,19 +102,19 @@ class MoveElementDialog(QDialog):
 
     def _get_element_text(self, elem: Element) -> str:
         if isinstance(elem, Header):
-            return f"Header {elem.level}: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
+            return f"Раздел: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
         elif isinstance(elem, Paragraph):
-            return f"Paragraph: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
+            return f"Обычный Текст: {elem.text[:50]}" + ("..." if len(elem.text) > 50 else "")
         elif isinstance(elem, Table):
-            return f"Table: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
+            return f"Таблица: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
         elif isinstance(elem, Image):
-            return f"Image: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
+            return f"Рисунок: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
         elif isinstance(elem, Listing):
-            return f"Listing: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
+            return f"Листинг: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
         elif isinstance(elem, ListElement):
-            return f"List: {elem.list_type} (items: {len(elem.items)})"
+            return f"Список: {elem.list_type} (items: {len(elem.items)})"
         elif isinstance(elem, Formula):
-            return f"Formula: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
+            return f"Формула: {elem.caption[:50]}" + ("..." if len(elem.caption) > 50 else "")
         return type(elem).__name__
 
     def get_data(self):

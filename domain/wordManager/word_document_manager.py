@@ -73,7 +73,7 @@ class WordDocumentManager:
     def remove_element(self, element: Element):
         """Удаляет элемент из дерева и документа."""
         if isinstance(element, Header) and element.children:
-            raise ValueError("Нельзя удалить заголовок с дочерними элементами")
+            raise ValueError("Нельзя удалить Раздел с дочерними элементами")
 
         parent_info = self.numberer.find_parent_and_index(self.tree, element)
         if parent_info is None:
@@ -670,7 +670,7 @@ class WordDocumentManager:
         return None
 
     def remove_header(self, element: Element, force: bool = False):
-        """Удаляет заголовок из документа. Если force=True, удаляет заголовок и его дочерние элементы, иначе удаляет только если нет дочерних элементов."""
+        """Удаляет Раздел из документа. Если force=True, удаляет Раздел и его дочерние элементы, иначе удаляет только если нет дочерних элементов."""
         if isinstance(element, Header) and element.docx_element:
             if force or not element.docx_element._element.getchildren():
                 element.docx_element._element.getparent().remove(element.docx_element._element)

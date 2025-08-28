@@ -52,9 +52,9 @@ class TreeViewWidget(QWidget):
 
         layout.addWidget(self.stack)
 
-        btn_pdf = QPushButton("Показать в PDF")
-        btn_pdf.clicked.connect(self.toggle_pdf)
-        layout.addWidget(btn_pdf)
+        self.btn_pdf = QPushButton("Показать в PDF")
+        self.btn_pdf.clicked.connect(self.toggle_pdf)
+        layout.addWidget(self.btn_pdf)
 
         self.setLayout(layout)
         self.is_pdf_mode = False
@@ -74,30 +74,33 @@ class TreeViewWidget(QWidget):
         for elem in elements:
             item = QTreeWidgetItem(parent_item)
             if isinstance(elem, Header):
-                item.setText(0, f"Header {elem.level}: {elem.text}")
+                item.setText(0, f"Раздел: {elem.text}" if elem.level == 1 else f"Подраздел: {elem.text}")
+
             elif isinstance(elem, Paragraph):
-                item.setText(0, f"Paragraph: {elem.text[:20]}...")
+                item.setText(0, f"Обычный Текст: {elem.text[:20]}...")
             elif isinstance(elem, Table):
-                item.setText(0, f"Table: {elem.caption}")
+                item.setText(0, f"Таблица: {elem.caption}")
             elif isinstance(elem, Image):
-                item.setText(0, f"Image: {elem.caption}")
+                item.setText(0, f"Рисунок: {elem.caption}")
             elif isinstance(elem, Listing):
-                item.setText(0, f"Listing: {elem.caption}")
+                item.setText(0, f"Листинг: {elem.caption}")
             elif isinstance(elem, ListElement):
-                item.setText(0, f"List: {len(elem.items)} items")
+                item.setText(0, f"Список: {len(elem.items)} кол-во; первый: {elem.items[0]}")
             elif isinstance(elem, Formula):
-                item.setText(0, f"Formula: {elem.caption}")
+                item.setText(0, f"Формула: {elem.caption}")
             item.setData(0, Qt.ItemDataRole.UserRole, elem)
             if hasattr(elem, 'children'):
                 self._add_items(item, elem.children)
 
     def toggle_pdf(self):
         if self.is_pdf_mode:
+            self.btn_pdf.setText("Показать в PDF")
             self.stack.setCurrentIndex(0)
             self.cleanup_temp_files()
             self.clear_pdf_pages()
             self.is_pdf_mode = False
         else:
+            self.btn_pdf.setText("Показать дерево элементов")
             self.show_pdf()
             self.stack.setCurrentIndex(1)
             self.is_pdf_mode = True

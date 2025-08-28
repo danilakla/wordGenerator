@@ -164,38 +164,7 @@ class StyleManager:
         paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.figures.spacingBefore", 0))  # Space before paragraph
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.figures.spacingAfter", 0))
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.figures.alignment", 0)]
-    def copy_paragraph_format(target_paragraph, source_paragraph):
-        """
-        Copies all paragraph formatting properties from source_paragraph to target_paragraph.
-        
-        Args:
-            target_paragraph: The paragraph to be formatted (will be modified)
-            source_paragraph: The paragraph to copy formatting from
-        """
-        # Get paragraph format objects
-        target_format = target_paragraph.paragraph_format
-        source_format = source_paragraph.paragraph_format
-        
-        # Alignment
-        target_format.alignment = source_format.alignment
-        
-        # Indentation
-        target_format.left_indent = source_format.left_indent
-        target_format.right_indent = source_format.right_indent
-        target_format.first_line_indent = source_format.first_line_indent
-        target_format.hanging = source_format.hanging
-        
-        # Spacing
-        target_format.space_before = source_format.space_before
-        target_format.space_after = source_format.space_after
-        target_format.line_spacing = source_format.line_spacing
-        target_format.line_spacing_rule = source_format.line_spacing_rule
-        
-        # Keep properties
-        target_format.keep_together = source_format.keep_together
-        target_format.keep_with_next = source_format.keep_with_next
-        target_format.page_break_before = source_format.page_break_before
-        target_format.widow_control = source_format.widow_control
+
     def appply_move_table(self,table):
         neighbor_after = self.neighbor_finder.get_after(table)
         if isinstance(neighbor_after,Paragraph):

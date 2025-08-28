@@ -10,7 +10,7 @@ class AddListingDialog(QDialog):
         layout = QVBoxLayout()
 
         self.text_edit = QTextEdit()  # Заменяем QLineEdit на QTextEdit
-        layout.addWidget(QLabel("Содержимое:"))
+        layout.addWidget(QLabel("Содержимое: Укажите скрипт (код)."))
         layout.addWidget(self.text_edit)
 
         self.caption_edit = QLineEdit()
