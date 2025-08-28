@@ -12,7 +12,6 @@ from elements.listing import Listing
 from elements.table import Table, DataTable
 from elements.paragraph import Paragraph
 from domain.styleManager.style_manager import StyleManager
-from domain.wordManager.tree_numbering import TreeNumbering
 from io import BytesIO
 
 from domain.parserManager.parser_word import ParserWord

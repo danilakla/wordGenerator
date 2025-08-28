@@ -15,7 +15,6 @@ from elements.listing import Listing
 from elements.table import Table, DataTable
 from elements.paragraph import Paragraph
 
-from domain.wordManager.tree_numbering import TreeNumbering
 from elements.undefined_element import UndefinedElement
 class ParserWord:
     def __init__(self,doc):
@@ -413,17 +412,3 @@ class ParserWord:
                 self.print_tree(elem.children, indent + 1, new_prefix)
 
 
-
-# Функция для красивого вывода дерева
-
-# Пример использования
-if __name__ == "__main__":
-    
-    doc_path = "../../foldertest/fsf.docx"
-    doc = Document(doc_path)
-    parser_wr= ParserWord(doc)
-    elements_tree = parser_wr.parse_document()
-    TreeNumbering(elements_tree).assign_numbers()
-    print("Document Structure:")
-    parser_wr.print_tree(elements_tree)
-  

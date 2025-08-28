@@ -103,19 +103,7 @@ class TreeNumbering:
                     run.clear()
             if element.docx_caption_paragraph.runs:
                 element.docx_caption_paragraph.runs[0].text=element.caption
-    def update_numbering(self, subtree: List[Element], top_level_number: str = None):
-        """Updates numbering for a subtree, starting from the specified top level."""
-        if top_level_number is None:
-            top_level_number = self.current_top_level
-        # Restore counters for the specified section
-        self.element_counters = self.section_states.get(top_level_number, {
-            'Image': 0,
-            'Table': 0,
-            'Formula': 0,
-            'Listing': 0
-        }).copy()
-        self.current_top_level = top_level_number
-        self._number_tree(subtree)
+    
     def find_parent_element(self,elements: List[Element], target_element: Element) -> Optional[Element]:
         """
         Finds the parent element of the target_element in the given list of elements.
