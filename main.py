@@ -6,7 +6,6 @@ from ui.views.splash_screen import SplashScreen
 from ui.views.folder_selection import FolderSelectionDialog
 from ui.views.document_choice import DocumentChoiceDialog
 from ui.views.main_window import MainWindow
-from config_hash import EXPECTED_HASH   # 🔹 импорт хэша
 
 
 def check_debug():
@@ -14,11 +13,6 @@ def check_debug():
         sys.exit("Debugging detected")
 
 
-def check_integrity():
-    with open(sys.argv[0], "rb") as f:
-        data = f.read()
-    if hashlib.sha256(data).hexdigest() != EXPECTED_HASH:
-        sys.exit("Файл поврежден")
 
 
 if __name__ == "__main__":

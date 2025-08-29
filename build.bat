@@ -51,8 +51,9 @@ for /f "tokens=2" %%h in ('powershell -Command "Get-FileHash ''%DIST%\main.exe''
     set HASH=%%h
 )
 
-echo [*] Writing config_hash.py
-echo EXPECTED_HASH = "%HASH%" > %ROOT%\config_hash.py
+:: 🔹 Отправляем эталон на сервер
+%PY311%\python.exe -c "import requests; requests.post('https://your-server.example/license/upload_hash', json={'hash': '%HASH%'})"
+
 
 echo [*] Build finished
 popd

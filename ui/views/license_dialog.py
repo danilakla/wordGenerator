@@ -50,7 +50,6 @@ class LicenseDialog(QDialog):
         self.token = None
 
     def try_validate(self):
-        """Проверка существующего токена"""
         if not os.path.exists(self.token_path):
             QMessageBox.warning(self, "Ошибка", "Файл лицензии не найден.")
             return
@@ -62,15 +61,18 @@ class LicenseDialog(QDialog):
         try:
             r = requests.post(f"{SERVER_BASE}/license/validate",
                               json={"token": token, "hwid": hwid, "exe_hash": exe_hash}, timeout=6)
-            if r.ok and r.json().get("ok"):
-                self.token = token
-                self.accept()
-                return
+            if r.ok:
+                data = r.json()
+                if data.get("ok") and data.get("expected_hash") == exe_hash:
+                    self.token = token
+                    self.accept()
+                    return
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Сервер недоступен: {e}")
             return
 
         QMessageBox.warning(self, "Ошибка", "Лицензия недействительна.")
+
 
     def try_activate(self):
         """Активация нового ключа"""

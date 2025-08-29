@@ -12,19 +12,14 @@ mkdir "%DIST_FULL%"
 echo [*] Копируем main.exe
 if exist "%DIST%\main.exe" copy "%DIST%\main.exe" "%DIST_FULL%\" >nul
 
-for %%d in (domain elements services ui util resource) do (
-    if exist "%ROOT%%%d" (
-        echo [*] Копируем %%d
-        xcopy "%ROOT%%%d" "%DIST_FULL%\%%d" /E /I /Y >nul
-    )
+
+
+echo [*] Копируем ресурсы
+if exist "%ROOT%resource" (
+    xcopy "%ROOT%resource" "%DIST_FULL%\resource" /E /I /Y >nul
 )
 
-if exist "%ROOT%config_hash.py" (
-    echo [*] Копируем config_hash.py
-    copy "%ROOT%config_hash.py" "%DIST_FULL%\" >nul
-)
-
-REM --- Явно копируем библиотеки ---
+REM --- Явно копируем необходимые библиотеки ---
 set "LIBS=PySide6 docx docxtpl dependency_injector PIL lxml dateutil latex2mathml PyQt6 PyMuPDF pymupdf docx2pdf mathml_to_latex cryptography"
 
 for %%L in (%LIBS%) do (
@@ -36,7 +31,13 @@ for %%L in (%LIBS%) do (
     )
 )
 
-REM --- Удаляем __pycache__, подавляем ошибки ---
+REM --- Чистим исходники .py, оставляем только бинарники ---
+echo [*] Чистим .py исходники
+for /r "%DIST_FULL%" %%f in (*.py) do (
+    del "%%f" >nul 2>&1
+)
+
+REM --- Удаляем __pycache__ ---
 echo [*] Удаляем __pycache__
 for /d /r "%DIST_FULL%" %%d in (__pycache__) do (
     rd /s /q "%%d" 2>nul
