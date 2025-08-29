@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-set PY311=C:\Users\danila\AppData\Local\Programs\Python\Python310
+set PY310=C:\Users\danila\AppData\Local\Programs\Python\Python310
 set MPRESS=C:\mpress\mpress.exe
 
 set ROOT=%~dp0
@@ -14,7 +14,7 @@ if not exist "%BUILD%" mkdir "%BUILD%"
 if not exist "%DIST%" mkdir "%DIST%"
 
 echo [*] Cythonize main.py
-%PY311%\python.exe -m cython --embed main.py -o %BUILD%\main.c
+%PY310%\python.exe -m cython --embed main.py -o %BUILD%\main.c
 
 echo [*] Cythonize modules
 for %%f in (
@@ -27,7 +27,7 @@ for %%f in (
     ui\views\*.py
     util\*.py
 ) do (
-    %PY311%\python.exe -m cython %%f -o %BUILD%\%%~nxf.c
+    %PY310%\python.exe -m cython %%f -o %BUILD%\%%~nxf.c
 )
 
 echo [*] Compile all .c files with MSVC
@@ -36,7 +36,7 @@ for %%f in (%BUILD%\*.c) do (
     set C_FILES=!C_FILES! %%f
 )
 
-cl !C_FILES! /Fe:%DIST%\main.exe /I %PY311%\include %PY311%\libs\python310.lib /O2 /MD
+cl !C_FILES! /Fe:%DIST%\main.exe /I %PY310%\include %PY310%\libs\python310.lib /O2 /MD
 
 if %ERRORLEVEL% NEQ 0 (
     echo [!] Build failed
@@ -52,7 +52,7 @@ for /f "tokens=2" %%h in ('powershell -Command "Get-FileHash ''%DIST%\main.exe''
 )
 
 :: 🔹 Отправляем эталон на сервер
-%PY311%\python.exe -c "import requests, os; headers = {'X-Admin-Key': os.environ.get('ADMIN_KEY', 'changeme_admin_key')}; requests.post('https://your-server.example/admin/upload_hash', json={'exe_hash': '%HASH%', 'version': 'v1.0.0'}, headers=headers)"
+%PY310%\python.exe -c "import requests, os; headers = {'X-Admin-Key': os.environ.get('ADMIN_KEY', 'changeme_admin_key')}; requests.post('https://your-server.example/admin/upload_hash', json={'exe_hash': '%HASH%', 'version': 'v1.0.0'}, headers=headers)"
 
 
 
