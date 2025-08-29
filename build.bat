@@ -52,7 +52,8 @@ for /f "tokens=2" %%h in ('powershell -Command "Get-FileHash ''%DIST%\main.exe''
 )
 
 :: 🔹 Отправляем эталон на сервер
-%PY311%\python.exe -c "import requests; requests.post('https://your-server.example/license/upload_hash', json={'hash': '%HASH%'})"
+%PY311%\python.exe -c "import requests, os; headers = {'X-Admin-Key': os.environ.get('ADMIN_KEY', 'changeme_admin_key')}; requests.post('https://your-server.example/admin/upload_hash', json={'exe_hash': '%HASH%', 'version': 'v1.0.0'}, headers=headers)"
+
 
 
 echo [*] Build finished

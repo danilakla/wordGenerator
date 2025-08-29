@@ -63,7 +63,7 @@ class LicenseDialog(QDialog):
                               json={"token": token, "hwid": hwid, "exe_hash": exe_hash}, timeout=6)
             if r.ok:
                 data = r.json()
-                if data.get("ok") and data.get("expected_hash") == exe_hash:
+                if data.get("ok"):
                     self.token = token
                     self.accept()
                     return
@@ -75,28 +75,27 @@ class LicenseDialog(QDialog):
 
 
     def try_activate(self):
-        """Активация нового ключа"""
         user_key = self.input.text().strip()
         if not user_key:
             QMessageBox.warning(self, "Ошибка", "Введите ключ!")
             return
-
+    
         hwid = get_hwid()
         exe_hash = get_exe_hash()
-
+    
         try:
-            # r = requests.post(f"{SERVER_BASE}/license/activate",
-            #                   json={"key": user_key, "hwid": hwid, "exe_hash": exe_hash}, timeout=10)
-            # data = r.json()
-            # if r.ok and data.get("ok"):
-            #     token = data["token"]
-            #     open(self.token_path, "w", encoding="utf-8").write(token)
-            #     self.token = token
+            r = requests.post(f"{SERVER_BASE}/license/activate",
+                              json={"key": user_key, "hwid": hwid, "exe_hash": exe_hash}, timeout=10)
+            data = r.json()
+            if r.ok and data.get("ok"):
+                token = data["token"]
+                open(self.token_path, "w", encoding="utf-8").write(token)
+                self.token = token
                 QMessageBox.information(self, "Успех", "Активация прошла успешно!")
                 self.accept()
                 return
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Сервер недоступен: {e}")
             return
-
+    
         QMessageBox.warning(self, "Ошибка", "Неверный ключ или сервер отклонил активацию.")
