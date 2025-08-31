@@ -45,7 +45,7 @@ class AddFormulaDialog(QDialog):
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
-    def open_url(self, url: str):
+    def open_url(self, url: str, checked=False):
         QDesktopServices.openUrl(QUrl(url))
     def get_data(self) -> tuple[Optional[Element], Optional[Element], str, str]:
         formula = self.formula_edit.text()

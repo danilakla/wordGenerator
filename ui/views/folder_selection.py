@@ -26,7 +26,7 @@ class FolderSelectionDialog(QDialog):
 
         self.setLayout(layout)
 
-    def select_folder(self):
+    def select_folder(self, checked=False):
         folder = QFileDialog.getExistingDirectory(self, "Выберите папку для сохранения")
         if folder:
             self.service.set_save_folder(folder)

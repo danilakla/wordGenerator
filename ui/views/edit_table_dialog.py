@@ -190,7 +190,7 @@ class EditTableDialog(QDialog):
         
         return merged_cells
 
-    def on_cell_clicked(self, row, col):
+    def on_cell_clicked(self, row, col, checked=False):
         """Обработка клика по ячейке"""
         cell = self.table.data[row][col]
         
@@ -206,7 +206,7 @@ class EditTableDialog(QDialog):
             item = QTableWidgetItem(cell.data)
             table_widget.setItem(row, col, item)
 
-    def on_item_changed(self, item):
+    def on_item_changed(self, item, checked=False):
         """Обработка изменения содержимого ячейки - синхронизация объединенных ячеек"""
         if not item:
             return
@@ -236,11 +236,11 @@ class EditTableDialog(QDialog):
                     return row, col
         return None, None
 
-    def update_align_button(self):
+    def update_align_button(self, checked=False):
         selected = self.table_widget.selectedItems()
         self.btn_align.setEnabled(bool(selected))
 
-    def open_align_dialog(self):
+    def open_align_dialog(self, checked=False):
         selected = self.table_widget.selectedItems()
         if not selected:
             return

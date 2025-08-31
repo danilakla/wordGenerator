@@ -42,7 +42,7 @@ class AddListDialog(QDialog):
 
         self.setLayout(layout)
 
-    def add_item(self):
+    def add_item(self, checked=False):
         text = self.item_edit.text().strip()
         if text:
             # Первая буква маленькая
@@ -55,7 +55,7 @@ class AddListDialog(QDialog):
             self.item_edit.clear()
             self.update_item_separators()
 
-    def edit_item(self):
+    def edit_item(self, checked=False):
         selected = self.items_list.selectedItems()
         if selected:
             text = self.item_edit.text().strip()
@@ -70,7 +70,7 @@ class AddListDialog(QDialog):
                 self.item_edit.clear()
                 self.update_item_separators()
 
-    def remove_item(self):
+    def remove_item(self, checked=False):
         selected = self.items_list.selectedItems()
         if selected:
             for item in selected:

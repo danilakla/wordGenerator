@@ -55,7 +55,7 @@ class AddHeaderDialog(QDialog):
             if isinstance(elem, Header) and elem.level == 1:
                 combo.addItem(elem.text, elem)
 
-    def update_after_combo(self):
+    def update_after_combo(self, checked=False):
         self.after_combo.clear()
         idx = self.parent_combo.currentIndex()
         if idx >= 0:

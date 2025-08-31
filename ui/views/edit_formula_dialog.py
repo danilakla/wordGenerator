@@ -39,7 +39,7 @@ class EditFormulaDialog(QDialog):
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
-    def open_url(self, url: str):
+    def open_url(self, url: str, checked=False):
         QDesktopServices.openUrl(QUrl(url))
     def get_data(self) -> Dict:
         return {

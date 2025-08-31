@@ -68,16 +68,19 @@ echo [*] Pack main.exe with MPRESS...
 "%MPRESS%" -s -m -b "%DIST%\main.exe"
 
 :: ---------------- Расчёт SHA256 ----------------
-echo [*] Calc SHA256 (post-pack)...
-set "HASH="
-for /f "tokens=2" %%h in ('powershell -Command "Get-FileHash ''%DIST%\main.exe'' -Algorithm SHA256 ^| Select-Object -ExpandProperty Hash"') do (
-    set "HASH=%%h"
-)
-echo [*] SHA256: !HASH!
+@REM (Get-FileHash "D:\projects\demo\WordBuildDirectory\dist\main.exe" -Algorithm SHA256).Hash.ToLower()
+    @REM curl -k -X POST "https://93.125.104.173:8444/admin/upload_hash" -H "X-Admin-Key: VerySecretAdminKeyHere" -H "Content-Type: application/json" -d "{\"exe_hash\": \"d8e625910c1404905b82b6106a7f58b4461a4a31b4944a5e597d4758bf9ab64b\", \"version\": \"1.0.0\"}"
 
-:: ---------------- Отправка хэша на сервер ----------------
-echo [*] Sending exe hash to server...
-"%PY310%\python.exe" -c "import requests; headers={'X-Admin-Key': 'VerySecretAdminKeyHere'}; r=requests.post('https://93.125.104.173:8444/admin/upload_hash', json={'exe_hash':'!HASH!','version':'v1.1.0'}, headers=headers, verify=False); print(r.text)"
+@REM echo [*] Calc SHA256 (post-pack)...
+@REM set "HASH="
+@REM for /f "tokens=2" %%h in ('powershell -Command "Get-FileHash ''%DIST%\main.exe'' -Algorithm SHA256 ^| Select-Object -ExpandProperty Hash"') do (
+@REM     set "HASH=%%h"
+@REM )
+@REM echo [*] SHA256: !HASH!
+
+@REM :: ---------------- Отправка хэша на сервер ----------------
+@REM echo [*] Sending exe hash to server...
+@REM "%PY310%\python.exe" -c "import requests; headers={'X-Admin-Key': 'VerySecretAdminKeyHere'}; r=requests.post('https://93.125.104.173:8444/admin/upload_hash', json={'exe_hash':'!HASH!','version':'v1.1.0'}, headers=headers, verify=False); print(r.text)"
 
 echo [*] Build finished
 popd

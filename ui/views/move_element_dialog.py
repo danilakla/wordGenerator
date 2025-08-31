@@ -79,7 +79,7 @@ class MoveElementDialog(QDialog):
             if hasattr(elem, 'children'):
                 self._populate_tree_for_header(item, elem.children)
 
-    def update_after_list(self):
+    def update_after_list(self, checked=False):
         if not self.is_header:
             return
         self.after_list.clear()

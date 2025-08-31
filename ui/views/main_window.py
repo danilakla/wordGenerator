@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
             return None
         return selected[0].data(0, Qt.ItemDataRole.UserRole)
 
-    def add_header(self):
+    def add_header(self, checked=False):
         try:
             dialog = AddHeaderDialog(self.service.get_tree(), is_sub=False)
             if dialog.exec():
@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_subheader(self):
+    def add_subheader(self, checked=False):
         try:
             dialog = AddHeaderDialog(self.service.get_tree(), is_sub=True)
             if dialog.exec():
@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_text(self):
+    def add_text(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_table(self):
+    def add_table(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_image(self):
+    def add_image(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_listing(self):
+    def add_listing(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -114,7 +114,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_list(self):
+    def add_list(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def add_formula(self):
+    def add_formula(self, checked=False):
         try:
             selected_elem = self.get_selected_element()
             if not selected_elem:
@@ -140,7 +140,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def remove_element(self):
+    def remove_element(self, checked=False):
         try:
             selected = self.tree_view.tree.selectedItems()
             if not selected:
@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def edit_element(self):
+    def edit_element(self, checked=False):
         try:
             selected = self.tree_view.tree.selectedItems()
             if selected:
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def move_element(self):
+    def move_element(self, checked=False):
         try:
             selected = self.tree_view.tree.selectedItems()
             if selected:
@@ -224,7 +224,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.handle_error(e)
 
-    def save_document(self):
+    def save_document(self, checked=False):
         try:
             self.service.save_document()
             QMessageBox.information(self, "Сохранено", "Документ сохранен")

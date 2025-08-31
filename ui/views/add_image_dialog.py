@@ -27,7 +27,7 @@ class AddImageDialog(QDialog):
 
         self.setLayout(layout)
 
-    def browse_image(self):
+    def browse_image(self, checked=False):
         path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "", "Images (*.png *.jpg *.bmp)")
         if path:
             self.path_edit.setText(path)

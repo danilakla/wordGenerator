@@ -53,17 +53,17 @@ class DocumentChoiceDialog(QDialog):
         self.radio_load.toggled.connect(self.update_visibility)
         self.update_visibility()
 
-    def update_visibility(self):
+    def update_visibility(self, checked=False):
         self.new_name.setEnabled(self.radio_new.isChecked())
         self.load_path.setEnabled(self.radio_load.isChecked())
         self.btn_browse.setEnabled(self.radio_load.isChecked())
 
-    def browse_file(self):
+    def browse_file(self, checked=False):
         path, _ = QFileDialog.getOpenFileName(self, "Выберите файл", "", "Word files (*.docx)")
         if path:
             self.load_path.setText(path)
 
-    def process_choice(self):
+    def process_choice(self, checked=False):
         if self.radio_new.isChecked():
             name = self.new_name.text()
             if name:

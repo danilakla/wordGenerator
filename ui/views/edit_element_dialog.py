@@ -79,7 +79,7 @@ class EditElementDialog(QDialog):
 
         self.setLayout(layout)
 
-    def browse_image(self):
+    def browse_image(self, checked=False):
         file_name, _ = QFileDialog.getOpenFileName(self, "Select Image", "", "Images (*.png *.jpg *.jpeg *.bmp)")
         if file_name:
             self.fields['path'].setText(file_name)

@@ -92,7 +92,7 @@ class TreeViewWidget(QWidget):
             if hasattr(elem, 'children'):
                 self._add_items(item, elem.children)
 
-    def toggle_pdf(self):
+    def toggle_pdf(self, checked=False):
         if self.is_pdf_mode:
             self.btn_pdf.setText("Показать в PDF")
             self.stack.setCurrentIndex(0)
@@ -158,7 +158,7 @@ class TreeViewWidget(QWidget):
         except Exception as e:
             print(f"Ошибка загрузки страниц: {e}")
 
-    def on_scroll(self, value):
+    def on_scroll(self, value, checked=False):
         if not self.pdf_pages:
             return
 

@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
+
 class ControlPanel(QWidget):
     def __init__(self, main_window):
         super().__init__()

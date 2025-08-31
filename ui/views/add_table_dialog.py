@@ -49,11 +49,13 @@ class AddTableDialog(QDialog):
 
         add_layout = QHBoxLayout()
         btn_add_row = QPushButton("Добавить строку")
-        btn_add_row.clicked.connect(lambda: self.table_widget.setRowCount(self.table_widget.rowCount() + 1))
+        
+        btn_add_row.clicked.connect(    lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1)
+)
         add_layout.addWidget(btn_add_row)
 
         btn_add_col = QPushButton("Добавить столбец")
-        btn_add_col.clicked.connect(lambda: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1))
+        btn_add_col.clicked.connect(lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1))
         add_layout.addWidget(btn_add_col)
         layout.addLayout(add_layout)
 
@@ -63,7 +65,7 @@ class AddTableDialog(QDialog):
 
         self.setLayout(layout)
 
-    def set_table_size(self):
+    def set_table_size(self, checked=False):
         rows = self.rows_spin.value()
         cols = self.cols_spin.value()
         self.table_widget.setRowCount(rows)
@@ -74,11 +76,11 @@ class AddTableDialog(QDialog):
                     item = QTableWidgetItem("")
                     self.table_widget.setItem(r, c, item)
 
-    def update_align_button(self):
+    def update_align_button(self, checked=False):
         selected = self.table_widget.selectedItems()
         self.btn_align.setEnabled(bool(selected))
 
-    def open_align_dialog(self):
+    def open_align_dialog(self, checked=False):
         selected = self.table_widget.selectedItems()
         if not selected:
             return
@@ -114,8 +116,8 @@ class AddTableDialog(QDialog):
                 align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
                 horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'
-                horizontal = self.WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
-                vertical = self.WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
+                horizontal = WD_PARAGRAPH_ALIGNMENT_MAP.get(horizontal_str, WD_PARAGRAPH_ALIGNMENT.CENTER)
+                vertical = WD_CELL_VERTICAL_ALIGNMENT_MAP.get(vertical_str, WD_CELL_VERTICAL_ALIGNMENT.CENTER)
                 row_data.append(DataTable(text, horizontal, vertical,1,col,row))
             data.append(row_data)
         return None, None, data, caption
