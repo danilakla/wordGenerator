@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal 
 
 REM ------------------------
 REM Параметры
@@ -21,14 +21,21 @@ REM ------------------------
 if exist "%DIST%\main.exe" copy "%DIST%\main.exe" "%DIST_FULL%\" >nul
 
 REM ------------------------
+REM Копируем все pyd-модули (с сохранением структуры)
+REM ------------------------
+echo [*] Копируем .pyd модули
+xcopy "%DIST%\*.pyd" "%DIST_FULL%\" /E /I /Y >nul
+
+REM ------------------------
 REM Копируем ресурсы
 REM ------------------------
 if exist "%ROOT%resource" (
     xcopy "%ROOT%resource" "%DIST_FULL%\resource" /E /I /Y >nul
 )
+if exist "%DIST%\hwid_validate.pyd" copy "%DIST%\hwid_validate.pyd" "%DIST_FULL%\" >nul
 
 REM ------------------------
-REM Копируем библиотеки
+REM Копируем сторонние библиотеки
 REM ------------------------
 set "LIBS=PySide6 docx docxtpl dependency_injector PIL lxml dateutil latex2mathml PyQt6 PyMuPDF pymupdf docx2pdf mathml_to_latex cryptography"
 
@@ -38,6 +45,16 @@ for %%L in (%LIBS%) do (
         xcopy "%PYTHONPATH%\Lib\site-packages\%%L" "%DIST_FULL%\%%L" /E /I /Y >nul
     ) else (
         echo [!] Библиотека %%L не найдена
+    )
+)
+
+REM ------------------------
+REM Создаём __init__.py для пакетов, если их нет
+REM ------------------------
+echo [*] Добавляем __init__.py где нужно
+for /d /r "%DIST_FULL%" %%d in (*) do (
+    if exist "%%d\*.pyd" (
+        if not exist "%%d\__init__.py" echo. > "%%d\__init__.py"
     )
 )
 

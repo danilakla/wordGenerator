@@ -15,3 +15,6 @@
 1.move list table не добавляет отступ /formula
 2.бесит что сворачиваеться при изменении дерева
 3.попробвать доабвить добавление не стандартных 
+
+
+cl /LD hwid_validate.c /I "C:\Program Files\OpenSSL-Win64\include" /I C:\Users\danila\AppData\Local\Programs\Python\Python310\include /link /LIBPATH:"C:\OpenSSL-Win64\lib" /LIBPATH:"C:\Users\danila\AppData\Local\Programs\Python\Python310\libs" "C:\Program Files\OpenSSL-Win64\lib\VC\x64\MD\libcrypto.lib" Advapi32.lib /OUT:hwid_validate.pyd

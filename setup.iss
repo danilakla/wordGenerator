@@ -15,8 +15,9 @@ Source: "dist_full\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Name: "{group}\MyApp"; Filename: "{app}\main.exe"
 Name: "{commondesktop}\MyApp"; Filename: "{app}\main.exe"; Tasks: desktopicon
 
-[Tasks]
+[Tasks] 
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Ярлыки:";
 
 [Run]
 Filename: "{app}\main.exe"; Description: "Запустить MyApp"; Flags: nowait postinstall skipifsilent
+    
