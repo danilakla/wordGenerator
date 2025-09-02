@@ -16,9 +16,10 @@ from PyQt6.QtCore import Qt
 from docx2pdf import convert
 import tempfile
 import os
-import fitz  # PyMuPDF
 from typing import List
-
+from PyPDF2 import PdfReader
+from pdf2image import convert_from_path
+from PIL.ImageQt import ImageQt
 class TreeViewWidget(QWidget):
     def __init__(self, service: DocumentService):
         super().__init__()
@@ -128,32 +129,58 @@ class TreeViewWidget(QWidget):
 
     def load_all_pdf_pages(self):
         try:
-            doc = fitz.open(self.current_pdf_path)
-            self.total_pages = len(doc)
+            
+
+            # Read PDF metadata
+            with open(self.current_pdf_path, 'rb') as file:
+                reader = PdfReader(file)
+                self.total_pages = len(reader.pages)
 
             self.clear_pdf_pages()
             self.pdf_pages = []
 
-            for page_number in range(self.total_pages):
-                page = doc.load_page(page_number)
-                mat = fitz.Matrix(2, 2)
-                pix = page.get_pixmap(matrix=mat)
-                img_data = pix.tobytes("ppm")
-                pixmap = QPixmap()
-                pixmap.loadFromData(img_data)
+            # Convert PDF pages to images
+            images = convert_from_path(
+                self.current_pdf_path,
+                dpi=150,
+                fmt='jpeg',  # Use JPEG instead of PPM
+                thread_count=4,
+                poppler_path="poppler/Library/bin"
+            )
+
+            for page_number, pil_image in enumerate(images):
+                # Convert PIL image to QPixmap properly
+                qimage = ImageQt(pil_image)
+                pixmap = QPixmap.fromImage(qimage)
+
+                if pixmap.isNull():
+                    print(f"Failed to load page {page_number}")
+                    continue
+
                 scaled_pixmap = pixmap.scaled(800, 1000, 
-                                              Qt.AspectRatioMode.KeepAspectRatio,
-                                              Qt.TransformationMode.SmoothTransformation)
+                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                            Qt.TransformationMode.SmoothTransformation)
+
                 page_label = QLabel()
                 page_label.setPixmap(scaled_pixmap)
                 page_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 page_label.setStyleSheet("margin: 10px; border: 1px solid #ccc;")
                 page_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
                 self.pdf_pages.append(page_label)
                 self.pdf_layout.addWidget(page_label)
 
             self.update_page_info(0)
+            try:
+            # Try to disconnect first to avoid multiple connections
+                self.scroll_area.verticalScrollBar().valueChanged.disconnect(self.on_scroll)
+            except:
+                # If not connected, just pass
+                pass
+            
+            # Connect the signal
             self.scroll_area.verticalScrollBar().valueChanged.connect(self.on_scroll)
+
 
         except Exception as e:
             print(f"Ошибка загрузки страниц: {e}")
