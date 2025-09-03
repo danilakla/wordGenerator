@@ -11,6 +11,8 @@ echo [1/5] Installing dependencies...
 "%PYTHON_PATH%" -m pip install --upgrade pip
 "%PYTHON_PATH%" -m pip install -r %REQ%
 "%PYTHON_PATH%" -m pip install nuitka
+"%PYTHON_PATH%" -m pip uninstall PySide6 -y  
+
 
 REM ====== CLEAN OLD BUILD ======
 echo [2/5] Cleaning old build...
@@ -20,10 +22,12 @@ if exist %BUILD_DIR% rmdir /s /q %BUILD_DIR%
 REM ====== BUILD WITH NUITKA ======
 echo [3/5] Building executable with Nuitka...
 "%PYTHON_PATH%" -m nuitka ^
+  --mingw64 ^
   --standalone ^
   --onefile ^
+  --lto=no ^
   --enable-plugin=pylint-warnings ^
-  --nofollow-import-to=PySide6 ^
+  --nofollow-import-to=PySide6,pandas,numpy,scipy ^
   --enable-plugin=pyqt6 ^
   --include-plugin-directory=domain ^
   --include-plugin-directory=elements ^
@@ -34,9 +38,11 @@ echo [3/5] Building executable with Nuitka...
   --output-dir=%DIST_DIR% ^
   %MAIN_SCRIPT%
 
+
 REM ====== COPY EXTRA FILES ======
 echo [4/5] Copying extra dependencies...
 xcopy /E /I /Y hwid_validate.pyd %DIST_DIR%\
+xcopy /E /I /Y resource %DIST_DIR%\resource\
 
 REM ====== DONE ======
 echo [5/5] Build complete! Files are in %DIST_DIR%

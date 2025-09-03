@@ -1,4 +1,4 @@
-# Updated tree_view.py - no changes needed, as per request.
+# Updated tree_view.py - simplified version
 
 from elements.element import Element
 from elements.formula import Formula
@@ -10,60 +10,31 @@ from elements.paragraph import Paragraph
 from elements.table import Table
 from services.document_service import DocumentService
 
-from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QPushButton, QStackedWidget, QScrollArea, QLabel, QSizePolicy
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QPushButton, QStackedWidget
 from PyQt6.QtCore import Qt
 from docx2pdf import convert
 import tempfile
 import os
+import webbrowser
 from typing import List
-from PyPDF2 import PdfReader
-from pdf2image import convert_from_path
-from PIL.ImageQt import ImageQt
+
 class TreeViewWidget(QWidget):
     def __init__(self, service: DocumentService):
         super().__init__()
         self.service = service
         layout = QVBoxLayout()
 
-        self.stack = QStackedWidget()
         self.tree = QTreeWidget()
         self.tree.setHeaderLabel("Дерево элементов")
-        self.stack.addWidget(self.tree)
+        layout.addWidget(self.tree)
 
-        self.pdf_widget = QWidget()
-        pdf_layout = QVBoxLayout(self.pdf_widget)
-
-        self.page_label = QLabel("Страница: 0/0")
-        pdf_layout.addWidget(self.page_label)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-
-        self.pdf_container = QWidget()
-        self.pdf_layout = QVBoxLayout(self.pdf_container)
-        self.pdf_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        self.scroll_area.setWidget(self.pdf_container)
-        pdf_layout.addWidget(self.scroll_area)
-
-        self.stack.addWidget(self.pdf_widget)
-
-        layout.addWidget(self.stack)
-
-        self.btn_pdf = QPushButton("Показать в PDF")
-        self.btn_pdf.clicked.connect(self.toggle_pdf)
-        layout.addWidget(self.btn_pdf)
+        # Single button to open PDF in browser
+        self.btn_open_pdf = QPushButton("Открыть PDF в браузере")
+        self.btn_open_pdf.clicked.connect(self.open_pdf_in_browser)
+        layout.addWidget(self.btn_open_pdf)
 
         self.setLayout(layout)
-        self.is_pdf_mode = False
-        self.current_page = 0
-        self.total_pages = 0
         self.temp_files_to_cleanup = []
-        self.pdf_pages = []
-        self.current_pdf_path = None
 
     def populate_tree(self):
         self.tree.clear()
@@ -93,129 +64,41 @@ class TreeViewWidget(QWidget):
             if hasattr(elem, 'children'):
                 self._add_items(item, elem.children)
 
-    def toggle_pdf(self, checked=False):
-        if self.is_pdf_mode:
-            self.btn_pdf.setText("Показать в PDF")
-            self.stack.setCurrentIndex(0)
-            self.cleanup_temp_files()
-            self.clear_pdf_pages()
-            self.is_pdf_mode = False
-        else:
-            self.btn_pdf.setText("Показать дерево элементов")
-            self.show_pdf()
-            self.stack.setCurrentIndex(1)
-            self.is_pdf_mode = True
-
-    def show_pdf(self):
+    def open_pdf_in_browser(self, checked=False):
+        """Open PDF in default browser instead of showing in-app"""
         temp_pdf_path = None
-        temp_wrd_path =None
+        temp_wrd_path = None
+        self.closeEvent()
+        
         try:
+            # Create temporary files
             with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_pdf:
                 temp_pdf_path = temp_pdf.name
                 
             with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_wrd:
                 temp_wrd_path = temp_wrd.name
+            
+            # Save document and convert to PDF
             self.service.temp_save_d(temp_wrd_path)
             convert(temp_wrd_path, temp_pdf_path)
 
+            # Add to cleanup list
             self.temp_files_to_cleanup.append(temp_pdf_path)
             self.temp_files_to_cleanup.append(temp_wrd_path)
-            self.current_pdf_path = temp_pdf_path
 
-            self.load_all_pdf_pages()
+            # Open PDF in browser using file URL
+            pdf_url = f"file:///{os.path.abspath(temp_pdf_path).replace(os.sep, '/')}"
+            webbrowser.open(pdf_url)
+            
+            print(f"PDF opened in browser: {temp_pdf_path}")
 
         except Exception as e:
-            print(f"Ошибка: {e}")
-
-    def load_all_pdf_pages(self):
-        try:
-            
-
-            # Read PDF metadata
-            with open(self.current_pdf_path, 'rb') as file:
-                reader = PdfReader(file)
-                self.total_pages = len(reader.pages)
-
-            self.clear_pdf_pages()
-            self.pdf_pages = []
-
-            # Convert PDF pages to images
-            images = convert_from_path(
-                self.current_pdf_path,
-                dpi=150,
-                fmt='jpeg',  # Use JPEG instead of PPM
-                thread_count=4,
-                poppler_path="poppler/Library/bin"
-            )
-
-            for page_number, pil_image in enumerate(images):
-                # Convert PIL image to QPixmap properly
-                qimage = ImageQt(pil_image)
-                pixmap = QPixmap.fromImage(qimage)
-
-                if pixmap.isNull():
-                    print(f"Failed to load page {page_number}")
-                    continue
-
-                scaled_pixmap = pixmap.scaled(800, 1000, 
-                                            Qt.AspectRatioMode.KeepAspectRatio,
-                                            Qt.TransformationMode.SmoothTransformation)
-
-                page_label = QLabel()
-                page_label.setPixmap(scaled_pixmap)
-                page_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                page_label.setStyleSheet("margin: 10px; border: 1px solid #ccc;")
-                page_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-                self.pdf_pages.append(page_label)
-                self.pdf_layout.addWidget(page_label)
-
-            self.update_page_info(0)
-            try:
-            # Try to disconnect first to avoid multiple connections
-                self.scroll_area.verticalScrollBar().valueChanged.disconnect(self.on_scroll)
-            except:
-                # If not connected, just pass
-                pass
-            
-            # Connect the signal
-            self.scroll_area.verticalScrollBar().valueChanged.connect(self.on_scroll)
-
-
-        except Exception as e:
-            print(f"Ошибка загрузки страниц: {e}")
-
-    def on_scroll(self, value, checked=False):
-        if not self.pdf_pages:
-            return
-
-        scroll_position = value
-        current_page = 0
-        max_visible_area = 0
-
-        for i, page_label in enumerate(self.pdf_pages):
-            page_pos = page_label.mapTo(self.scroll_area, page_label.pos()).y()
-            page_height = page_label.height()
-            visible_height = min(page_pos + page_height, scroll_position + self.scroll_area.height()) - max(page_pos, scroll_position)
-            if visible_height > max_visible_area:
-                max_visible_area = visible_height
-                current_page = i
-
-        if current_page != self.current_page:
-            self.current_page = current_page
-            self.update_page_info(current_page)
-
-    def update_page_info(self, page_number):
-        self.page_label.setText(f"Страница: {page_number + 1}/{self.total_pages}")
-
-    def clear_pdf_pages(self):
-        for i in reversed(range(self.pdf_layout.count())): 
-            widget = self.pdf_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.setParent(None)
-        self.pdf_pages = []
+            print(f"Ошибка при открытии PDF: {e}")
+            # Cleanup on error
+            self.cleanup_temp_files()
 
     def cleanup_temp_files(self):
+        """Clean up temporary files"""
         files_to_remove = self.temp_files_to_cleanup.copy()
         self.temp_files_to_cleanup = []
         for file_path in files_to_remove:
@@ -224,3 +107,8 @@ class TreeViewWidget(QWidget):
                     os.unlink(file_path)
             except Exception as e:
                 print(f"Ошибка удаления файла {file_path}: {e}")
+
+    def closeEvent(self, event):
+        """Clean up temp files when widget is closed"""
+        self.cleanup_temp_files()
+        event.accept()

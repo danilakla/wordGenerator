@@ -9,6 +9,3 @@ PyQt6
 docx2pdf 
 mathml-to-latex
 cryptography
-poppler-utils
-pdf2image
-PyPDF2
