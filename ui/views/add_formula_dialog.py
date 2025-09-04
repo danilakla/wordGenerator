@@ -41,12 +41,27 @@ class AddFormulaDialog(QDialog):
 
 
         btn_save = QPushButton("Сохранить")
-        btn_save.clicked.connect(self.accept)
+        btn_save.clicked.connect(self.validate_and_accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
+    def validate_input(self) -> bool:
+        """Validate that formula field is not empty"""
+        formula = self.formula_edit.text().strip()
+        
+        # Check for empty formula
+        if not formula:
+            QMessageBox.warning(self, "Ошибка", "Поле формулы не может быть пустым! Введите формулу в формате LaTeX.")
+            return False
+        
+        return True
+
+    def validate_and_accept(self, checked=False):
+        """Validate input before accepting the dialog"""
+        if self.validate_input():
+            self.accept()
     def open_url(self, url: str, checked=False):
         QDesktopServices.openUrl(QUrl(url))
     def get_data(self) -> tuple[Optional[Element], Optional[Element], str, str]:
-        formula = self.formula_edit.text()
+        formula = self.formula_edit.text().strip()
         return None, None, formula, ""

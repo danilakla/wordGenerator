@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QListWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit
+from PyQt6.QtWidgets import QDialog,QMessageBox, QLabel, QListWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLineEdit
 from elements.element import Element
 from typing import List, Optional
 
@@ -37,7 +37,7 @@ class AddListDialog(QDialog):
         layout.addLayout(add_item_layout)
 
         btn_save = QPushButton("Сохранить")
-        btn_save.clicked.connect(self.accept)
+        btn_save.clicked.connect(self.validate_and_accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
@@ -76,6 +76,17 @@ class AddListDialog(QDialog):
             for item in selected:
                 self.items_list.takeItem(self.items_list.row(item))
             self.update_item_separators()
+    def validate_input(self) -> bool:
+        """Validate that the list is not empty"""
+        if self.items_list.count() == 0:
+            QMessageBox.warning(self, "Ошибка", "Список не может быть пустым! Добавьте хотя бы один элемент.")
+            return False
+        return True
+
+    def validate_and_accept(self, checked=False):
+        """Validate input before accepting the dialog"""
+        if self.validate_input():
+            self.accept()
 
     def update_item_separators(self):
         """Обновляет разделители (; или .) для элементов списка."""

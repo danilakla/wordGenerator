@@ -47,34 +47,43 @@ class AddTableDialog(QDialog):
 
         self.table_widget.itemSelectionChanged.connect(self.update_align_button)
 
-        # add_layout = QHBoxLayout()
-        # btn_add_row = QPushButton("Добавить строку")
-        
-        # btn_add_row.clicked.connect(    lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1)
-
-        # add_layout.addWidget(btn_add_row)
-
-        # btn_add_col = QPushButton("Добавить столбец")
-        # btn_add_col.clicked.connect(lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1))
-        # add_layout.addWidget(btn_add_col)
-        # layout.addLayout(add_layout)
 
         btn_save = QPushButton("Сохранить")
-        btn_save.clicked.connect(self.accept)
+        btn_save.clicked.connect(self.validate_and_accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
+        self.size_set = False
+    def validate_input(self) -> bool:
+        """Validate that table size has been set"""
+        if not self.size_set:
+            QMessageBox.warning(self, "Ошибка", "Не задан размер таблицы! Нажмите кнопку 'Установить размер'.")
+            return False
+        
+        # Check if table has at least some content
+        if self.table_widget.rowCount() == 0 or self.table_widget.columnCount() == 0:
+            QMessageBox.warning(self, "Ошибка", "Таблица должна иметь хотя бы одну строку и один столбец!")
+            return False
+            
+        return True
+
+    def validate_and_accept(self,checked=False):
+        """Validate input before accepting the dialog"""
+        if self.validate_input():
+            self.accept()
 
     def set_table_size(self, checked=False):
         rows = self.rows_spin.value()
         cols = self.cols_spin.value()
         self.table_widget.setRowCount(rows)
         self.table_widget.setColumnCount(cols)
+        
         for r in range(rows):
             for c in range(cols):
                 if not self.table_widget.item(r, c):
                     item = QTableWidgetItem("")
                     self.table_widget.setItem(r, c, item)
+        self.size_set = True
 
     def update_align_button(self, checked=False):
         selected = self.table_widget.selectedItems()
@@ -112,7 +121,7 @@ class AddTableDialog(QDialog):
             row_data = []
             for col in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, col)
-                text = item.text() if item else ""
+                text = item.text() if item else " "
                 align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
                 horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'

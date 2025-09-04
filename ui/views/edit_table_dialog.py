@@ -135,7 +135,7 @@ class EditTableDialog(QDialog):
 
         # Кнопка сохранения
         btn_save = QPushButton("Сохранить")
-        btn_save.clicked.connect(self.accept)
+        btn_save.clicked.connect(self.validate_and_accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
@@ -273,7 +273,21 @@ class EditTableDialog(QDialog):
 
             self.table_widget.blockSignals(False)
             self.table_widget.viewport().update()
+    def validate_input(self) -> bool:
+        """Validate that table size has been set"""
+     
+        
+        # Check if table has at least some content
+        if self.table_widget.rowCount() == 0 or self.table_widget.columnCount() == 0:
+            QMessageBox.warning(self, "Ошибка", "Таблица должна иметь хотя бы одну строку и один столбец!")
+            return False
+            
+        return True
 
+    def validate_and_accept(self,checked=False):
+        """Validate input before accepting the dialog"""
+        if self.validate_input():
+            self.accept()
   
     def get_data(self) -> Dict:
         data = {}
@@ -283,7 +297,7 @@ class EditTableDialog(QDialog):
             row_data = []
             for col in range(self.table_widget.columnCount()):
                 item = self.table_widget.item(row, col)
-                text = item.text() if item else ""
+                text = item.text() if item else " "
                 align_data = item.data(Qt.ItemDataRole.UserRole) if item else None
                 horizontal_str = align_data.get('horizontal', 'center') if align_data else 'center'
                 vertical_str = align_data.get('vertical', 'center') if align_data else 'center'

@@ -275,7 +275,10 @@ class WordDocumentManager:
                 # formula_para.clear()  # Custom helper needed — python-docx has no built-in clear
                 # formula_run = formula_para.add_run()
                 for run in formula_para.runs:
-                    run._element.append(self.formula_meneger._create_omath_element(element.formula))
+                    run._element.getparent().replace(
+                            run._element, 
+                            self.formula_meneger._create_omath_element(element.formula)
+                        )
         
                 # --- Update caption in cell(0, 2) ---
                 caption_cell = table.cell(0, 2)

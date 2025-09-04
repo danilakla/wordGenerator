@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton
+from PyQt6.QtWidgets import QMessageBox,QDialog, QLabel, QLineEdit, QComboBox, QVBoxLayout, QPushButton
 from typing import List
 from elements.element import Element
 from elements.header import Header
@@ -38,7 +38,7 @@ class AddHeaderDialog(QDialog):
             self.update_after_combo()
 
         btn_save = QPushButton("Сохранить")
-        btn_save.clicked.connect(self.accept)
+        btn_save.clicked.connect(self.validate_and_accept)
         layout.addWidget(btn_save)
 
         self.setLayout(layout)
@@ -64,10 +64,33 @@ class AddHeaderDialog(QDialog):
                 for elem in parent.children:
                     if isinstance(elem, Header) and elem.level == parent.level + 1:
                         self.after_combo.addItem(elem.text, elem)
-
+    def validate_and_accept(self, checked=False):
+        """Validate input before accepting the dialog"""
+        if self.validate_input():
+            self.accept()
+    def validate_input(self) -> bool:
+        """Validate the input text"""
+        text = self.text_edit.text().strip()
+        
+        # Check for empty string or only spaces
+        if not text:
+            QMessageBox.warning(self, "Ошибка", "Невозможно отправить пустую строку или только пробелы!")
+            return False
+        
+        # Check if text starts with a number
+        if text[0].isdigit():
+            QMessageBox.warning(self, "Ошибка", "Невозможно начать текст с цифры! Первый символ должен быть буквой.")
+            return False
+        
+        # Check if first character is a letter
+        if not text[0].isalpha():
+            QMessageBox.warning(self, "Ошибка", "Первый символ должен быть буквой!")
+            return False
+        
+        return True
     def get_data(self):
         after = self.after_combo.currentData() if self.after_combo.currentIndex() >= 0 else None
-        text = self.text_edit.text()
+        text = self.text_edit.text().strip()
         if self.is_sub:
             parent = self.parent_combo.currentData() if self.parent_combo.currentIndex() >= 0 else None
             level = parent.level + 1 if parent else 1
