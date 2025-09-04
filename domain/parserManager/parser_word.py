@@ -301,6 +301,19 @@ class ParserWord:
                 paraId=None
                 if cell.paragraphs:
                     paraId = cell.paragraphs[0]._element.get(f"{{{ns['w14']}}}paraId")
+                    if paraId is None:
+                        cell_text = '\n'.join(p.text.strip() for p in cell.paragraphs if p.text.strip())
+                        cell_data = DataTable(
+                        data=cell_text,
+                        horizontal=cell.paragraphs[0].alignment if cell.paragraphs else None,
+                        vertical=cell.vertical_alignment,
+                        colspan=colspan,
+                        parent_row=i,
+                        parent_col=j
+                         )
+                        data_row.append(cell_data)
+                        continue
+                    
                 # Определяем rowspan (если ячейка объединена вертикально)
                     rowspan = 1
                     for k in range(i + 1, len(table.rows)):
