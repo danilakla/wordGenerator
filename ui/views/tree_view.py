@@ -29,7 +29,7 @@ class TreeViewWidget(QWidget):
         layout.addWidget(self.tree)
 
         # Single button to open PDF in browser
-        self.btn_open_pdf = QPushButton("Открыть PDF в браузере")
+        self.btn_open_pdf = QPushButton("Открыть в PDF")
         self.btn_open_pdf.clicked.connect(self.open_pdf_in_browser)
         layout.addWidget(self.btn_open_pdf)
 
@@ -108,7 +108,6 @@ class TreeViewWidget(QWidget):
             except Exception as e:
                 print(f"Ошибка удаления файла {file_path}: {e}")
 
-    def closeEvent(self, event):
+    def closeEvent(self):
         """Clean up temp files when widget is closed"""
         self.cleanup_temp_files()
-        event.accept()

@@ -47,17 +47,17 @@ class AddTableDialog(QDialog):
 
         self.table_widget.itemSelectionChanged.connect(self.update_align_button)
 
-        add_layout = QHBoxLayout()
-        btn_add_row = QPushButton("Добавить строку")
+        # add_layout = QHBoxLayout()
+        # btn_add_row = QPushButton("Добавить строку")
         
-        btn_add_row.clicked.connect(    lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1)
-)
-        add_layout.addWidget(btn_add_row)
+        # btn_add_row.clicked.connect(    lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1)
 
-        btn_add_col = QPushButton("Добавить столбец")
-        btn_add_col.clicked.connect(lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1))
-        add_layout.addWidget(btn_add_col)
-        layout.addLayout(add_layout)
+        # add_layout.addWidget(btn_add_row)
+
+        # btn_add_col = QPushButton("Добавить столбец")
+        # btn_add_col.clicked.connect(lambda checked=False: self.table_widget.setColumnCount(self.table_widget.columnCount() + 1))
+        # add_layout.addWidget(btn_add_col)
+        # layout.addLayout(add_layout)
 
         btn_save = QPushButton("Сохранить")
         btn_save.clicked.connect(self.accept)
