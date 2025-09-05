@@ -33,7 +33,21 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.control_panel)
         self.setCentralWidget(splitter)
         self.tree_view.populate_tree()
+    def closeEvent(self, event):
+        reply = QMessageBox.question(
+            self,
+            "Confirm Exit",
+            "Are you sure you want to quit?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
 
+        if reply == QMessageBox.StandardButton.Yes:
+            self.service.save_document()
+            event.accept()  # allow closing
+        else:
+            event.ignore()  # cancel close
+            
     def get_selected_element(self):
         selected = self.tree_view.tree.selectedItems()
         if not selected:

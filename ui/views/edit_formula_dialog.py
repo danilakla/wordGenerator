@@ -29,7 +29,7 @@ class EditFormulaDialog(QDialog):
 
         # Add spacing for better readability
         layout.addSpacing(10)
-        self.formula_field = QLineEdit(element.formula)
+        self.formula_field = QLineEdit()
         layout.addWidget(QLabel("LaTeX Formula:"))
         layout.addWidget(self.formula_field)
 

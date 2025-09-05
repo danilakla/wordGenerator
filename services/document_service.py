@@ -1,4 +1,5 @@
 # document_service.py
+from datetime import datetime
 from typing import Dict, Optional, List
 from docx import Document
 from io import BytesIO
@@ -32,7 +33,12 @@ class DocumentService:
         self.manager.load_document(self.doc_path)
 
     def load_document(self, path: str):
-        self.doc_path = path
+        directory, filename = os.path.split(path)
+        date_str = datetime.now().strftime("%Y.%m.%d")
+        new_filename =  date_str +"_новый_документ"+"_"+filename
+        new_path = os.path.join(directory, new_filename)
+
+        self.doc_path = new_path
         self.manager.load_document(path)
 
     def save_document(self):
