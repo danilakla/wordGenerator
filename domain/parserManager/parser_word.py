@@ -126,8 +126,13 @@ class ParserWord:
         pending_table_caption = None
         paragraph_index = 0
         table_index = 0
-        elements = list(self.doc.element.body)
+        sect_pr_elements = list(self.doc.element.body)
 
+        elements = [el for el in sect_pr_elements if not el.xml.startswith("<w:sectPr")]
+        
+        # rm = [el for el in sect_pr_elements if el.xml.startswith("<w:sectPr")]
+        # for el1 in rm:
+        #     el1.getparent().remove(el1)    
         i = 0
         while i < len(elements):
             element = elements[i]
