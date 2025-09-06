@@ -574,7 +574,8 @@ class WordDocumentManager:
             if isinstance(element,Listing) or isinstance(element,ListElement):
                 for main_elemend in main_element:
                     parent_element.insert(insert_index, main_elemend)
-                    insert_index += 1
+                    main_elemend.getparent()
+                    insert_index =parent_element.index(main_elemend) + 1
             else:
                 parent_element.insert(insert_index, main_element)
                 # self.safe_insert_after(parent_element, insert_position, main_element)
