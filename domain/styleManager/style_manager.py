@@ -119,8 +119,10 @@ class StyleManager:
                 run.font.bold = self.config_service.get("documentFormatting.headings.font.style.bold")       
                 run.font.italic = self.config_service.get("documentFormatting.headings.font.style.italic")  
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.headings.font.color")] 
-
             paragraph_format  = header.docx_element.paragraph_format
+            paragraph_format.keep_together=False
+            paragraph_format.keep_with_next =False
+            paragraph_format.widow_control = False
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.headings.font.lineSpacing", 0)]
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_right", 0))   
@@ -148,6 +150,9 @@ class StyleManager:
             run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.figures.color")] 
         
         paragraph_format  = image.docx_caption_paragraph.paragraph_format
+        paragraph_format.keep_together=False
+        paragraph_format.keep_with_next =False
+        paragraph_format.widow_control = False
         paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.figures.lineSpacing", 0)]
         paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.figures.paragraph_format.indent_left", 0))      
         paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.figures.paragraph_format.indent_right", 0))   
@@ -208,7 +213,9 @@ class StyleManager:
         paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.first_line", 0))
         paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.spacingBefore", 0))  # Space before paragraph
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.tables.caption.paragraph_format.spacingAfter", 0))
-
+        paragraph_format.keep_together=False
+        paragraph_format.keep_with_next =False
+        paragraph_format.widow_control = False
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.tables.caption.paragraph_format.alignment", 0)]
 
 
@@ -362,7 +369,9 @@ class StyleManager:
         paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.listings.caption.spacingBefore", 0))  # Space before paragraph
         paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.listings.caption.spacingAfter", 0))
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.listings.caption.alignment", 0)]
-
+        paragraph_format.keep_together=False
+        paragraph_format.keep_with_next =False
+        paragraph_format.widow_control = False
         for list_item in listing.docx_listing_paragraphs:
             for run in list_item.runs:
                 run.font.name = self.config_service.get("documentFormatting.listings.family")  
@@ -370,8 +379,11 @@ class StyleManager:
                 run.font.bold = self.config_service.get("documentFormatting.listings.style.bold")       
                 run.font.italic = self.config_service.get("documentFormatting.listings.style.italic")  
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.listings.color")] 
-
+            
             paragraph_format  = list_item.paragraph_format
+            paragraph_format.keep_together=False
+            paragraph_format.keep_with_next =False
+            paragraph_format.widow_control = False
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.listings.lineSpacing", 0)]
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.listings.paragraph_format.indent_right", 0))   
@@ -411,6 +423,9 @@ class StyleManager:
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.paragraph.color")] 
 
         paragraph_format  = paragraph.docx_element.paragraph_format
+        paragraph_format.keep_together=False
+        paragraph_format.keep_with_next =False
+        paragraph_format.widow_control = False
         paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.paragraph.lineSpacing", 0)]
         paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_left", 0))      
         paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_right", 0))   
@@ -456,6 +471,9 @@ class StyleManager:
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.lists.color")] 
 
             paragraph_format  = list_item.paragraph_format
+            paragraph_format.keep_together=False
+            paragraph_format.keep_with_next =False
+            paragraph_format.widow_control = False
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.lists.lineSpacing", 0)]
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_right", 0))   

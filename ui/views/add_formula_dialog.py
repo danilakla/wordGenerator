@@ -16,7 +16,7 @@ class AddFormulaDialog(QDialog):
         layout = QVBoxLayout()
         video_label = QLabel(
             'Чтобы понять, как пользоваться сервисом ниже, можно посмотреть видео. Просто нажмите на ссылку, и откроется ролик: '
-            '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1">Watch Tutorial Video</a>'
+            '<a href="https://www.youtube.com/watch?v=tF382rAQi2Q">Watch Tutorial Video</a>'
         )
         video_label.setOpenExternalLinks(True)
         video_label.linkActivated.connect(self.open_url)

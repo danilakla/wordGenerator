@@ -12,7 +12,7 @@ class EditFormulaDialog(QDialog):
         layout = QVBoxLayout()
         video_label = QLabel(
             'Чтобы отредактировать формулу, сначала посмотри обучающий туториал: '
-            '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1">Watch Tutorial Video</a>'
+            '<a href="https://www.youtube.com/watch?v=_dI3_2Cbd8k">Watch Tutorial Video</a>'
         )
         video_label.setOpenExternalLinks(True)
         video_label.linkActivated.connect(self.open_url)
