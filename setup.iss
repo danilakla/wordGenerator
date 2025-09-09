@@ -6,6 +6,8 @@ OutputDir=.
 DisableDirPage=no
 Compression=lzma
 SolidCompression=yes
+PrivilegesRequired=admin
+
 
 [Files]
 ; Копируем весь собранный дистрибутив
@@ -19,5 +21,7 @@ Name: "{commondesktop}\MyApp"; Filename: "{app}\main.exe"; Tasks: desktopicon
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Ярлыки:";
 
 [Run]
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command & '{app}\allow_start_app.bat'"; Flags: runhidden waituntilterminated
+
 Filename: "{app}\main.exe"; Description: "Запустить MyApp"; Flags: nowait postinstall skipifsilent
     
