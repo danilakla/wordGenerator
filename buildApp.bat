@@ -38,7 +38,6 @@ echo [3/7] Building executable with Nuitka...
   --include-plugin-directory=services ^
   --include-plugin-directory=ui\views ^
   --include-plugin-directory=util ^
-  --include-data-dir=resource=resource ^
   --output-dir=%DIST_DIR% ^
   %MAIN_SCRIPT%
 
@@ -46,7 +45,6 @@ echo [3/7] Building executable with Nuitka...
 REM ====== COPY EXTRA FILES ======
 echo [4/7] Copying extra dependencies...
 xcopy /E /I /Y hwid_validate.pyd %DIST_DIR%\
-xcopy /E /I /Y allow_start_app.bat %DIST_DIR%\
 xcopy /E /I /Y resource %DIST_DIR%\resource\
 
 REM ====== CALCULATE HASH ======
@@ -54,12 +52,14 @@ echo [5/7] Calculating SHA256 hash...
 for /f "tokens=* usebackq" %%h in (`powershell -command "(Get-FileHash '%DIST_DIR%\%TARGET_EXE%' -Algorithm SHA256).Hash.ToLower()"`) do set FILE_HASH=%%h
 echo Hash: %FILE_HASH%
 
+
 REM ====== SEND HASH TO SERVER ======
 echo [6/7] Sending hash to server...
 curl -k -X POST "%SERVER_URL%" ^
   -H "X-Admin-Key: %ADMIN_KEY%" ^
   -H "Content-Type: application/json" ^
   -d "{\"exe_hash\": \"%FILE_HASH%\", \"version\": \"%VERSION%\"}"
+
 
 
 REM ====== DONE ======
