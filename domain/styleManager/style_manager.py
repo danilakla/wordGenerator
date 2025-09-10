@@ -119,11 +119,16 @@ class StyleManager:
                 run.font.bold = self.config_service.get("documentFormatting.headings.font.style.bold")       
                 run.font.italic = self.config_service.get("documentFormatting.headings.font.style.italic")  
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.headings.font.color")] 
+                if header.level==1 and self.config_service.get("documentFormatting.headings.font.uppercase",False):
+                    run.text= run.text.upper()
+
             paragraph_format  = header.docx_element.paragraph_format
             paragraph_format.keep_together=False
             paragraph_format.keep_with_next =False
             paragraph_format.widow_control = False
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.headings.font.lineSpacing", 0)]
+            if paragraph_format.line_spacing_rule is WD_LINE_SPACING.EXACTLY:
+                paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_right", 0))   
             paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.first_line", 0))
@@ -153,6 +158,8 @@ class StyleManager:
         paragraph_format.keep_together=False
         paragraph_format.keep_with_next =False
         paragraph_format.widow_control = False
+        if paragraph_format.line_spacing_rule is WD_LINE_SPACING.EXACTLY:
+            paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
         paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.figures.lineSpacing", 0)]
         paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.figures.paragraph_format.indent_left", 0))      
         paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.figures.paragraph_format.indent_right", 0))   
@@ -216,6 +223,7 @@ class StyleManager:
         paragraph_format.keep_together=False
         paragraph_format.keep_with_next =False
         paragraph_format.widow_control = False
+
         paragraph_format.alignment=self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.tables.caption.paragraph_format.alignment", 0)]
 
 
@@ -379,7 +387,7 @@ class StyleManager:
                 run.font.bold = self.config_service.get("documentFormatting.listings.style.bold")       
                 run.font.italic = self.config_service.get("documentFormatting.listings.style.italic")  
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.listings.color")] 
-            
+
             paragraph_format  = list_item.paragraph_format
             paragraph_format.keep_together=False
             paragraph_format.keep_with_next =False
@@ -427,6 +435,8 @@ class StyleManager:
         paragraph_format.keep_with_next =False
         paragraph_format.widow_control = False
         paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.paragraph.lineSpacing", 0)]
+        if paragraph_format.line_spacing_rule is WD_LINE_SPACING.EXACTLY:
+            paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
         paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_left", 0))      
         paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.indent_right", 0))   
         paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.paragraph.paragraph_format.first_line", 0))
@@ -474,7 +484,10 @@ class StyleManager:
             paragraph_format.keep_together=False
             paragraph_format.keep_with_next =False
             paragraph_format.widow_control = False
+            
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.lists.lineSpacing", 0)]
+            if paragraph_format.line_spacing_rule is WD_LINE_SPACING.EXACTLY:
+                paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.lists.paragraph_format.indent_right", 0))   
             paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.lists.paragraph_format.first_line", 0))

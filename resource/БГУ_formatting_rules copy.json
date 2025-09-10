@@ -1,0 +1,428 @@
+{
+  "documentFormatting": {
+    "general": {
+      "margins": {
+        "top": 2,
+        "bottom": 2,
+        "right": 1.5,
+        "left": 3
+      },
+      "font": {
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "line_space_count":18
+      },
+      "typography": {
+        "dash": "enDash",
+        "hyphen": "standard",
+        "multiplicationSign": "middleDot"
+      },
+      "pageNumbering": {
+        "style": "arabic",
+        "position": "top-right",
+        "font": {
+          "family": "Times New Roman",
+          "size": "12pt"
+        },
+        "skip": ["titlePage", "assignmentPage", "sectionFirstPage", "appendixFirstPage"]
+      }
+    },
+    "paragraph": {
+        "first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+        "hyphenation": {
+          "enabled": true,
+          "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
+        },
+        "paragraph_format": {
+        "alignment": "justify",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "spacingBeforeTable": 14,
+        "first_line":1.25
+      
+      }
+    },
+    "headings": {
+       "font": {
+        "uppercase":true,
+
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":true,
+          "italic":false
+        }
+      },
+      "section":{
+      "paragraph_format": {
+        "alignment": "center",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 18,
+        "spacingBefore": 0,
+        "first_line":1.25
+      }
+      },
+      "subsection": {
+        "alignment": "left",
+        "style": "bold",
+        "case": "sentenceCase",
+        "spacingAfter": 12,
+        "spacingBefore": 18,
+        "spacingBeforeAnotherSubSection": 12
+      },
+      "special": {
+        "titles": ["Abstract", "TableOfContents", "Introduction", "Conclusion", "References"],
+        "alignment": "center",
+        "style": "bold",
+        "case": "sentenceCase"
+      }
+    },
+    "tables": {
+    "caption":{
+      "first_line": 0,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 0,
+        "spacingBefore": 14,
+        "first_line":0
+      }
+    },
+      "first_line": 0,
+        "family": "Times New Roman",
+        "size": 12,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "paragraph_format": {
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "first_line":0
+      }
+    },
+    "figures": {
+
+        "first_line":0,
+        "family": "Times New Roman",
+        "size": 12,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":true,
+          "italic":false
+         },
+        "hyphenation": {
+          "enabled": true,
+          "exceptions": ["headings", "figureCaptions", "tableTitles", "keywords"]
+        },
+        "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 14,
+        "spacingBefore": 6,
+        "first_line":0
+      
+      },
+      "spacingBefore":14,
+      "spacingAfter":0,
+      "caption": {
+        "position": "below",
+        "label": "Рисунок {sectionNumber}.{itemNumber} – {Description}",
+        "referenceFormat": "fullWord",
+        "alignment": "center"
+      },
+      
+      "alignment": "center",
+      "restrictions": {
+        "noSectionEnd": true
+      }
+    },
+    "lists": {
+       "first_line": 1.25,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+        "paragraph_format": {
+        "alignment": "justify",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 0,
+        "spacingBefore": 0,
+        "spacingBeforeTable": 14,
+        "first_line":1.25
+      
+      }
+    },
+    "formulas": {
+
+"first_line": 0,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+      "numbering": {
+        "format": "{sectionNumber}.{itemNumber}",
+        "position": "left"
+      },
+      "first":{
+      "alignment": "center",
+        "vertical":"center"
+      },
+      "second":{
+      "alignment": "right",
+        "vertical":"center"
+
+      },
+      "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 12,
+        "spacingBefore": 12,
+        "first_line":0
+      
+      },
+      "symbols": {
+        "multiplication": "middleDot",
+        "standards": ["international", "interstate", "national", "industry"]
+      },
+      "explanation": {
+        "position": "below",
+        "format": {
+          "prefix": "where",
+          "noColon": true,
+          "newLinePerSymbol": true
+        }
+      },
+      "restrictions": {
+        "noSectionEnd": true
+      }
+    },
+    "listings": {
+     "first_line": 0,
+        "family": "Courier New",
+        "size": 12,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         },
+          "caption":{  
+            "alignment": "center",
+            "spacingAfter": 14,
+        "spacingBefore": 6,
+        "family": "Times New Roman",
+        "size": 14,
+        "lineSpacing": "Exactyl",
+        "color":"black",
+         "style": {
+          "bold":false,
+          "italic":false
+         }},
+          "paragraph_format": {
+        "alignment": "left",
+        "case": "sentenceCase",
+        "indent_left":0,
+        "indent_right":0,
+        "line_sp":"Exactyl",
+        "spacingAfter": 0,
+        "spacingBefore": 14,
+        "first_line":0
+      
+      },
+      "frame": true,
+      "numbering": "Листинг {sectionNumber}.{itemNumber} – {Description}",
+      "placement": {
+        "maxPageCoverage": "70%",
+        "moveToAppendixIfExceeds": true,
+        "noPageBreak": true
+      },
+      "spacing": {
+        "before": "14pt",
+        "betweenListingAndCaption": "6pt",
+        "afterCaption": "14pt"
+      },
+      "formatting": {
+        "blockSeparation": "emptyLines",
+        "nestedIndentation": "2spaces"
+      },
+      "referenceFormat": "fullWord",
+      "restrictions": {
+        "noSectionEnd": true
+      }
+    },
+    "references": {
+      "format": "squareBrackets",
+      "list": {
+        "indent": "1.25cm",
+        "noDotAfterNumber": true,
+        "order": "appearance",
+        "standard": "GOST 7.1-2003"
+      }
+    },
+    "numbers": {
+      "oneToNine": "words",
+      "exceptions": ["sectionReferences"]
+    },
+    "abstract": {
+      "maxPages": 1,
+      "languages": ["main", "foreign"],
+      "content": [
+        {
+          "type": "volumeInfo",
+          "items": ["totalPages", "illustrations", "tables", "sources", "appendices"],
+          "omitIfAbsent": ["tables", "appendices"]
+        },
+        {
+          "type": "keywords",
+          "minCount": 5,
+          "maxCount": 15,
+          "case": "uppercase",
+          "separator": ",",
+          "noHyphenation": true,
+          "noFinalDot": true
+        },
+        {
+          "type": "text",
+          "items": [
+            "object",
+            "goal",
+            "results",
+            "technicalCharacteristics",
+            "implementation",
+            "impact"
+          ],
+          "researchAdditions": {
+            "methodology": "afterGoal"
+          }
+        },
+        {
+          "type": "graphicMaterial",
+          "format": "A1Equivalent",
+          "standard": "GOST 2.301"
+        }
+      ],
+      "title": {
+        "text": "Abstract",
+        "alignment": "center",
+        "style": "bold",
+        "case": "sentenceCase"
+      }
+    },
+    "tableOfContents": {
+      "title": {
+        "text": "Table of Contents",
+        "alignment": "center",
+        "style": "bold",
+        "case": "sentenceCase"
+      },
+      "items": [
+        "abstracts",
+        "introduction",
+        "sections",
+        "subsections",
+        "conclusion",
+        "references",
+        "graphicMaterial",
+        "appendices"
+      ],
+      "pageNumbers": {
+        "style": "arabic",
+        "alignment": "right",
+        "noPunctuation": true
+      }
+    },
+    "structure": {
+      "order": [
+        "titlePage",
+        "assignmentPage",
+        "tableOfContents",
+        "abstractMain",
+        "abstractForeign",
+        "introduction",
+        "sections",
+        "conclusion",
+        "references",
+        "graphicMaterial",
+        "technicalDocuments",
+        "appendices"
+      ],
+      "assignmentPage": {
+        "printing": "doubleSided",
+        "margins": "mirrored"
+      },
+      "volume": {
+        "minPages": 60,
+        "maxPages": 100,
+        "excludes": ["appendices"]
+      },
+      "sectionFrame": {
+        "onFirstPage": true,
+        "exclude": ["titlePage", "assignmentPage", "appendices"],
+        "content": {
+          "bottomRight": ["UniversityCode", "SpecialtyCode", "DefenseYear"],
+          "pageField": {
+            "first": "1",
+            "total": "sectionPages"
+          },
+          "consultant": {
+            "sections": ["economic"],
+            "position": "freeCell"
+          }
+        }
+      }
+    }
+  }
+  }
