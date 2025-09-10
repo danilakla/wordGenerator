@@ -22,7 +22,7 @@ from util.config_service import ConfigService
 from util.neighbor_finder import NeighborFinder
 class StyleManager:
     
-    def __init__(self, doc: Document,tree: List[Element],):
+    def __init__(self, doc: Document,tree: List[Element],univer:str):
         self.tree = tree
         self.COLOR_MAP = {
     "black": RGBColor(0, 0, 0),
@@ -63,7 +63,7 @@ class StyleManager:
     "bottom": WD_CELL_VERTICAL_ALIGNMENT.BOTTOM,
     "both": WD_CELL_VERTICAL_ALIGNMENT.BOTH    # Add more as needed
 }
-        self.config_service = ConfigService("resource/formatting_rules.json")
+        self.config_service = ConfigService("resource/"+univer+"formatting_rules.json")
         self.neighbor_finder=NeighborFinder(self.tree)
         self.doc = doc
         self._ensure_styles()
@@ -136,6 +136,7 @@ class StyleManager:
             if header.level==1:
                 paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.spacingBefore", 0))  # Space before paragraph
                 paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.spacingAfter", 0))
+                paragraph_format.alignment =self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.headings.section.paragraph_format.alignment", 0)]
               
             elif header.level>1:
                 if isinstance(neighbor_before,Header):

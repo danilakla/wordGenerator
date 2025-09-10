@@ -25,11 +25,11 @@ class WordDocumentManager:
         self.tree = []
         self.formula_meneger =  FormulaHelper("resource\mml2omml.xsl")
         
-    def load_document(self,doc_path: str):
+    def load_document(self,doc_path: str,univer:str):
         self.doc = Document(doc_path)
         self.parser_word_manager = ParserWord(self.doc)
         self.tree =self.parser_word_manager.parse_document()
-        self.style_manager = StyleManager(self.doc,self.tree)
+        self.style_manager = StyleManager(self.doc,self.tree,univer)
         self.numberer = TreeNumbering(self.tree)
         self.numberer.assign_numbers()
         self.doc_path = doc_path

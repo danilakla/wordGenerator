@@ -73,7 +73,11 @@ class TreeNumbering:
                         if i != 0:  # Пропускаем первый элемент (индекс 0)
                             run.clear()
                     if element.docx_element.runs:
-                        element.docx_element.runs[0].text=element.text
+                        if element.docx_element.runs[0].text.isupper():
+                            element.docx_element.runs[0].text =element.text.upper()
+                        else:
+                            element.docx_element.runs[0].text =element.text
+                            
                     
                    
                 # Recursion for child elements

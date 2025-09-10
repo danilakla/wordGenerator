@@ -19,6 +19,7 @@ from domain.wordManager.word_document_manager import WordDocumentManager
 
 class DocumentService:
     def __init__(self):
+        self.university=""
         self.manager = WordDocumentManager()
         self.doc_path = None
         self.save_folder = None
@@ -30,7 +31,7 @@ class DocumentService:
         self.doc_path = os.path.join(self.save_folder, f"{name}.docx")
         doc = Document()
         doc.save(self.doc_path)
-        self.manager.load_document(self.doc_path)
+        self.manager.load_document(self.doc_path,self.university)
 
     def load_document(self, path: str):
         directory, filename = os.path.split(path)
@@ -39,7 +40,7 @@ class DocumentService:
         new_path = os.path.join(directory, new_filename)
 
         self.doc_path = new_path
-        self.manager.load_document(path)
+        self.manager.load_document(path,self.university)
 
     def save_document(self):
         self.manager.save_document(self.doc_path)

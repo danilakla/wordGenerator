@@ -10,8 +10,7 @@
       "font": {
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
-        "line_space_count":18
+        "lineSpacing": "single"
       },
       "typography": {
         "dash": "enDash",
@@ -32,7 +31,7 @@
         "first_line": 1.25,
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -47,7 +46,7 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 0,
         "spacingBeforeTable": 14,
@@ -57,11 +56,9 @@
     },
     "headings": {
        "font": {
-        "uppercase":true,
-
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":true,
@@ -70,12 +67,12 @@
       },
       "section":{
       "paragraph_format": {
-        "alignment": "center",
+        "alignment": "left",
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
-        "spacingAfter": 18,
+        "line_sp":"single",
+        "spacingAfter": 14,
         "spacingBefore": 0,
         "first_line":1.25
       }
@@ -84,9 +81,9 @@
         "alignment": "left",
         "style": "bold",
         "case": "sentenceCase",
-        "spacingAfter": 12,
-        "spacingBefore": 18,
-        "spacingBeforeAnotherSubSection": 12
+        "spacingAfter": 14,
+        "spacingBefore": 14,
+        "spacingBeforeAnotherSubSection": 14
       },
       "special": {
         "titles": ["Abstract", "TableOfContents", "Introduction", "Conclusion", "References"],
@@ -100,7 +97,7 @@
       "first_line": 0,
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -111,7 +108,7 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 14,
         "first_line":0
@@ -120,7 +117,7 @@
       "first_line": 0,
         "family": "Times New Roman",
         "size": 12,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -129,7 +126,7 @@
           "paragraph_format": {
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 0,
         "first_line":0
@@ -139,11 +136,11 @@
 
         "first_line":0,
         "family": "Times New Roman",
-        "size": 12,
-        "lineSpacing": "Exactyl",
+        "size": 14,
+        "lineSpacing": "single",
         "color":"black",
          "style": {
-          "bold":true,
+          "bold":false,
           "italic":false
          },
         "hyphenation": {
@@ -155,9 +152,9 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 14,
-        "spacingBefore": 6,
+        "spacingBefore": 14,
         "first_line":0
       
       },
@@ -179,7 +176,7 @@
        "first_line": 1.25,
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -190,7 +187,7 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 0,
         "spacingBeforeTable": 14,
@@ -203,7 +200,7 @@
 "first_line": 0,
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -227,9 +224,9 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
-        "spacingAfter": 12,
-        "spacingBefore": 12,
+        "line_sp":"single",
+        "spacingAfter": 14,
+        "spacingBefore": 14,
         "first_line":0
       
       },
@@ -253,7 +250,7 @@
      "first_line": 0,
         "family": "Courier New",
         "size": 12,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -262,10 +259,10 @@
           "caption":{  
             "alignment": "center",
             "spacingAfter": 14,
-        "spacingBefore": 6,
+        "spacingBefore": 14,
         "family": "Times New Roman",
         "size": 14,
-        "lineSpacing": "Exactyl",
+        "lineSpacing": "single",
         "color":"black",
          "style": {
           "bold":false,
@@ -276,7 +273,7 @@
         "case": "sentenceCase",
         "indent_left":0,
         "indent_right":0,
-        "line_sp":"Exactyl",
+        "line_sp":"single",
         "spacingAfter": 0,
         "spacingBefore": 14,
         "first_line":0
