@@ -131,14 +131,17 @@ class StyleManager:
                 paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
             paragraph_format.left_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_left", 0))      
             paragraph_format.right_indent = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.indent_right", 0))   
-            paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.first_line", 0))
             neighbor_before = self.neighbor_finder.get_before(header)
+            
             if header.level==1:
+                paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.first_line", 0))
                 paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.spacingBefore", 0))  # Space before paragraph
                 paragraph_format.space_after = Pt(self.config_service.get("documentFormatting.headings.section.paragraph_format.spacingAfter", 0))
                 paragraph_format.alignment =self.WD_ALIGN_PARAGRAPH_MAP[self.config_service.get("documentFormatting.headings.section.paragraph_format.alignment", 0)]
-              
+        
             elif header.level>1:
+                paragraph_format.first_line_indent = self.cm_to_pt(self.config_service.get("documentFormatting.headings.subsection.first_line", 0))
+                
                 if isinstance(neighbor_before,Header):
                     neighbor_before.docx_element.paragraph_format.space_after=Pt(self.config_service.get("documentFormatting.headings.subsection.spacingBeforeAnotherSubSection", 0))  # Space before paragraph
                     paragraph_format.space_before = Pt(self.config_service.get("documentFormatting.headings.subsection.spacingBeforeAnotherSubSection", 0))  # Space before paragraph

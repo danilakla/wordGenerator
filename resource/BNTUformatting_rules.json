@@ -79,6 +79,7 @@
       }
       },
       "subsection": {
+        "first_line":1.25,
         "alignment": "left",
         "style": "bold",
         "case": "sentenceCase",
