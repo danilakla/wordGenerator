@@ -13,9 +13,11 @@ def get_hwid():
     return info
 
 def get_exe_hash():
+    
     exe = sys.argv[0]
     with open(exe, "rb") as f:
         p=hashlib.sha256(f.read()).hexdigest()
+        print(p)
         return p
 
 

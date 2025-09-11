@@ -2,6 +2,7 @@ import sys, hashlib
 from PyQt6.QtWidgets import QApplication
 from services.document_service import DocumentService
 from ui.views.license_dialog import LicenseDialog
+from ui.views.notification_message import NotificationMessage
 from ui.views.splash_screen import SplashScreen
 from ui.views.folder_selection import FolderSelectionDialog
 from ui.views.document_choice import DocumentChoiceDialog
@@ -19,6 +20,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # 🔹 перед запуском GUI проверяем лицензию
+    NotificationMessage.check_and_show()
+
     license_dialog = LicenseDialog()
     if license_dialog.exec() != LicenseDialog.DialogCode.Accepted:
         sys.exit(0)
