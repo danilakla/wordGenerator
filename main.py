@@ -21,12 +21,12 @@ if __name__ == "__main__":
 
     # 🔹 перед запуском GUI проверяем лицензию
     NotificationMessage.check_and_show()
+    service = DocumentService()
 
-    license_dialog = LicenseDialog()
+    license_dialog = LicenseDialog(service)
     if license_dialog.exec() != LicenseDialog.DialogCode.Accepted:
         sys.exit(0)
 
-    service = DocumentService()
     try:
         check_debug()
         splash = SplashScreen()
@@ -45,5 +45,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
         traceback.print_exc()
-        service.emergency_save(f"Произошла непредвиденная ошибка:\n{e}")
+        if not service.active:
+            service.emergency_save(f"Произошла непредвиденная ошибка:\n{e}")
         sys.exit(1)

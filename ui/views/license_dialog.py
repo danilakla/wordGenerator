@@ -22,11 +22,12 @@ def get_exe_hash():
 
 
 class LicenseDialog(QDialog):
-    def __init__(self):
+    def __init__(self,service):
+        
         super().__init__()
         self.setWindowTitle("Активация продукта")
         self.setMinimumWidth(400)
-
+        self.service=service
         layout = QVBoxLayout(self)
 
         self.label = QLabel("Введите лицензионный ключ:")
@@ -43,10 +44,28 @@ class LicenseDialog(QDialog):
         self.btn_retry = QPushButton("Повторить проверку")
         self.btn_retry.clicked.connect(self.try_validate)
         layout.addWidget(self.btn_retry)
+        
+        self.btn_free = QPushButton("Попробовать бесплатно")
+        self.btn_free.clicked.connect(self.try_free)
+        layout.addWidget(self.btn_free)
+
 
         self.token_path = os.path.join(os.path.dirname(sys.argv[0]), "license.key")
         self.token = None
+    def try_free(self, checked=False):
+        """Метод для пробного периода - просто пропускаем активацию"""
+        # Показываем информационное сообщение
+        QMessageBox.information(self, "Пробный период", 
+                              "Во время бесплатного режима вы можете добавить только 7 элементов.\n"
+                              "По достижении лимита программа будет автоматически закрыта,\n"
+                              "при этом до достижения лимита вы можете просмотреть полученный результат в PDF.")
 
+        # Создаем фиктивный токен для пробного режима
+        self.token = "trial_mode_activated"
+        self.service.active=True
+        # Принимаем диалог (пропускаем активацию)
+        self.accept()
+    
     def try_validate(self, checked=False):
         if not os.path.exists(self.token_path):
             QMessageBox.warning(self, "Ошибка", "Файл лицензии не найден.")

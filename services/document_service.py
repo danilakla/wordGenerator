@@ -1,12 +1,13 @@
 # document_service.py
 from datetime import datetime
+import sys
 from typing import Dict, Optional, List
 from docx import Document
 from io import BytesIO
 from PIL import Image as PILImage
 import copy
 import os
-
+from PyQt6.QtWidgets import QMessageBox
 from elements.header import Header
 from elements.paragraph import Paragraph
 from elements.table import Table, DataTable
@@ -16,14 +17,25 @@ from elements.list_element import ListElement
 from elements.formula import Formula
 from elements.element import Element
 from domain.wordManager.word_document_manager import WordDocumentManager
-
 class DocumentService:
     def __init__(self):
         self.university=""
+        self.active=False
+        self.count=7
         self.manager = WordDocumentManager()
         self.doc_path = None
         self.save_folder = None
-
+        self.st_c=7
+        
+    def styl_appl(self):
+        if self.active:
+            if self.count<0:
+                QMessageBox.critical(None, "Ошибка", f"Вы достигли лимита")
+                sys.exit(0)
+            if self.count==0:
+                QMessageBox.warning(None,"warning", f"Вы достигли лимита. Последующие добавления элементов завершат приложение.")
+    
+                
     def set_save_folder(self, folder: str):
         self.save_folder = folder
 
@@ -69,40 +81,58 @@ class DocumentService:
         return find_parent(self.get_tree())
 
     def add_header(self, parent: Optional[Element], text: str, level: int, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         header = Header(level=level, text=text)
         self.manager.add_element(parent, header, after)
 
     def add_paragraph(self, parent: Optional[Element], text: str, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         paragraph = Paragraph(text=text)
         self.manager.add_element(parent, paragraph, after)
         return paragraph
 
     def add_table(self, parent: Optional[Element], data: List[List[DataTable]], caption: str, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         table = Table(data=data, caption=caption)
         self.manager.add_element(parent, table, after)
 
     def add_image(self, parent: Optional[Element], image_path: str, caption: str, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         with open(image_path, 'rb') as f:
             image_data = f.read()
         image = Image(image_data=image_data, caption=caption)
         self.manager.add_element(parent, image, after)
 
     def add_listing(self, parent: Optional[Element], text: str, caption: str, after: Optional[Element] = None):
+        self.styl_appl()
+        self.merge_data()
         listing = Listing(text=text, caption=caption)
         self.manager.add_element(parent, listing, after)
 
     def add_list(self, parent: Optional[Element], items: List[str], list_type: str, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         list_elem = ListElement(items=items, list_type=list_type)
         self.manager.add_element(parent, list_elem, after)
 
     def add_formula(self, parent: Optional[Element], formula: str, caption: str, after: Optional[Element] = None):
+        self.merge_data()
+        self.styl_appl()
         formula_elem = Formula(formula=formula, caption=caption)
         self.manager.add_element(parent, formula_elem, after)
 
     def remove_element(self, element: Element):
+        self.styl_appl()
+        
         self.manager.remove_element(element)
 
     def update_element(self, element: Element, new_data: Dict):
+        self.styl_appl()
+        
         if isinstance(element, Header):
             new_header = Header(level=element.level, text=new_data['text'])
             self.manager.update_element(element, new_header)
@@ -133,7 +163,16 @@ class DocumentService:
             self.manager.update_element(element, new_formula)
 
     def move_element(self, element: Element, new_parent: Optional[Element], after: Optional[Element] = None):
+        self.styl_appl()
+        
         self.manager.move_element_word(new_parent, element, after)
 
     def get_doc_path(self) -> str:
         return self.doc_path
+    
+    def merge_data(self):
+        if self.active:
+            self.count=self.count-1
+               
+                
+                

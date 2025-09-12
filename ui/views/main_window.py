@@ -43,7 +43,8 @@ class MainWindow(QMainWindow):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            self.service.save_document()
+            if not self.service.active:
+                self.service.save_document()
             event.accept()  # allow closing
         else:
             event.ignore()  # cancel close
@@ -247,10 +248,11 @@ class MainWindow(QMainWindow):
 
     def handle_error(self, exception: Exception):
         """Обрабатывает ошибку и выполняет аварийное сохранение."""
-        emergency_path = self.service.emergency_save()
-        error_message = f"Произошла ошибка: {str(exception)}\n"
-        if emergency_path:
-            error_message += f"Документ сохранен в: {emergency_path}"
-        else:
-            error_message += "Не удалось выполнить аварийное сохранение документа."
-        QMessageBox.critical(self, "Ошибка", error_message)
+        if not self.service.active:
+            emergency_path = self.service.emergency_save()
+            error_message = f"Произошла ошибка: {str(exception)}\n"
+            if emergency_path:
+                error_message += f"Документ сохранен в: {emergency_path}"
+            else:
+                error_message += "Не удалось выполнить аварийное сохранение документа."
+            QMessageBox.critical(self, "Ошибка", error_message)

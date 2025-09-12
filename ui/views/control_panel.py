@@ -52,7 +52,9 @@ class ControlPanel(QWidget):
         layout.addWidget(btn_move)
 
         btn_save = QPushButton("Сохранить документ")
+        
         btn_save.clicked.connect(self.main_window.save_document)
         layout.addWidget(btn_save)
-
+        if self.main_window.service.active:
+            btn_save.setEnabled(False)
         self.setLayout(layout)

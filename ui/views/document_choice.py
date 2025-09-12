@@ -14,6 +14,9 @@ class DocumentChoiceDialog(QDialog):
         self.radio_load = QRadioButton("""Загрузка существующего документа (Программа может обработать документ только при условии, 
                                        что он соответствует установленным стандартам оформления. 
                                        Документ должен содержать разделы и их содержимое.)""")
+        if self.service.active:
+            self.radio_load.setEnabled(False)
+            
         self.radio_new.setChecked(True)
 
         # Объединяем в группу, чтобы только одна могла быть выбрана
