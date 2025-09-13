@@ -56,7 +56,9 @@ class EditElementDialog(QDialog):
             layout.addWidget(QLabel("Путь к картинке:"))
             layout.addLayout(path_layout)
         elif isinstance(element, Listing):
-            self.fields['text'] = QTextEdit(element.text)  # Заменяем QTextEdit на QTextEdit
+            self.fields['text'] = QTextEdit()  # Заменяем QTextEdit на QTextEdit
+            # print(f"Text from QTextEdit: {repr(element.text)}")
+            self.fields['text'].setPlainText(element.text)
             self.fields['caption'] = QLineEdit(TextUtils.clean_caption(element.caption))
             layout.addWidget(QLabel("Содержимое: Укажите скрипт (код)."))
             layout.addWidget(self.fields['text'])
@@ -197,7 +199,7 @@ class EditElementDialog(QDialog):
             if path:
                 data['image_path'] = path
         elif isinstance(self.element, Listing):
-            data['text'] = self.fields['text'].toPlainText()  # Изменяем метод получения текста
+            data['text'] = self.fields['text'].toPlainText() 
             data['caption'] = TextUtils.clean_caption(self.fields['caption'].text())
         elif isinstance(self.element, ListElement):
             data = self.fields['list_dialog'].get_data()
