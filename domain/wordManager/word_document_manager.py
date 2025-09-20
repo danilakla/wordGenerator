@@ -34,7 +34,7 @@ class WordDocumentManager:
         self.numberer = TreeNumbering(self.tree)
         self.numberer.assign_numbers()
         self.doc_path = doc_path
-        self.check_debug()
+        # self.check_debug()
     def check_debug(self):
         if sys.gettrace() is not None:
             sys.exit("Debugging detected")
@@ -71,7 +71,7 @@ class WordDocumentManager:
             self.numberer.add_after(parent, element)
             if not isinstance(parent,Header):
                 after=parent
-        self.check_debug()
+        # self.check_debug()
         self.numberer.assign_numbers()
         self._sync_element_to_doc(element, parent, after)
         self._apply_styles(element)
@@ -84,7 +84,7 @@ class WordDocumentManager:
         parent_info = self.numberer.find_parent_and_index(self.tree, element)
         if parent_info is None:
             raise ValueError("Элемент не найден в дереве")
-        self.check_debug()
+        # self.check_debug()
         parent_list, index = parent_info
         parent_list.pop(index)
         self.numberer.assign_numbers()

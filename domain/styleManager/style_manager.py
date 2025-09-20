@@ -127,7 +127,7 @@ class StyleManager:
             paragraph_format.keep_together=False
             paragraph_format.keep_with_next =False
             paragraph_format.widow_control = False
-            self.check_debug()
+            # self.check_debug()
             paragraph_format.line_spacing_rule  =self.WD_LINE_SPACING_MAP[self.config_service.get("documentFormatting.headings.font.lineSpacing", 0)]
             if paragraph_format.line_spacing_rule is WD_LINE_SPACING.EXACTLY:
                 paragraph_format.line_spacing=Pt(self.config_service.get("documentFormatting.general.font.line_space_count", 18))
@@ -439,7 +439,7 @@ class StyleManager:
                 run.font.bold = self.config_service.get("documentFormatting.paragraph.style.bold")       
                 run.font.italic = self.config_service.get("documentFormatting.paragraph.style.italic")  
                 run.font.color.rgb = self.COLOR_MAP[self.config_service.get("documentFormatting.paragraph.color")] 
-        self.check_debug()
+        # self.check_debug()
         paragraph_format  = paragraph.docx_element.paragraph_format
         paragraph_format.keep_together=False
         paragraph_format.keep_with_next =False

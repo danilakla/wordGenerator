@@ -33,6 +33,7 @@ echo [3/7] Building executable with Nuitka...
   --enable-plugin=pylint-warnings ^
   --nofollow-import-to=PySide6,pandas,numpy,scipy ^
   --enable-plugin=pyqt6 ^
+  --include-data-dir="D:\projects\demo\wordGenerator\.venv\Lib\site-packages\latex2mathml=latex2mathml" ^
   --include-plugin-directory=domain ^
   --include-plugin-directory=elements ^
   --include-plugin-directory=services ^

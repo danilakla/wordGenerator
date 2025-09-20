@@ -90,28 +90,7 @@ class LicenseDialog(QDialog):
             return
 
         QMessageBox.warning(self, "Ошибка", "Лицензия недействительна.")
-    # def _checK_style(self):
-    #     token_path = os.path.join(os.path.dirname(sys.argv[0]), "license.key")
-    #     if not os.path.exists(token_path):
-    #         return False
-
-    #     token = open(token_path, "r", encoding="utf-8").read().strip()
-    #     hwid = get_hwid()
-    #     exe_hash = get_exe_hash()
-
-    #     try:
-    #         r = requests.post(f"{SERVER_BASE}/license/validate",
-    #                           json={"token": token, "hwid": hwid, "exe_hash": exe_hash}, timeout=6)
-    #         if r.ok:
-    #             data = r.json()
-    #             if data.get("ok"):
-    #                 self.token = token
-    #                 self.accept()
-    #                 return
-    #     except Exception as e:
-    #         return False
-
-
+   
 
 
     def try_activate(self, checked=False):

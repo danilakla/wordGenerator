@@ -1,5 +1,5 @@
 from docx.oxml import parse_xml
-from latex2mathml.converter import convert as latex_to_mathml
+from latex2mathml.converter import convert 
 from lxml import etree
 
 class FormulaHelper:
@@ -14,7 +14,7 @@ class FormulaHelper:
         Поддерживает любые сложные формулы.
         """
         # 1. LaTeX → MathML
-        mathml = latex_to_mathml(latex_formula)
+        mathml = convert(latex_formula)
 
         # 2. MathML → OMML
         mathml_tree = etree.fromstring(mathml.encode("utf-8"))

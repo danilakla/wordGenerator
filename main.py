@@ -23,12 +23,12 @@ if __name__ == "__main__":
     NotificationMessage.check_and_show()
     service = DocumentService()
 
-    license_dialog = LicenseDialog(service)
-    if license_dialog.exec() != LicenseDialog.DialogCode.Accepted:
-        sys.exit(0)
+    # license_dialog = LicenseDialog(service)
+    # if license_dialog.exec() != LicenseDialog.DialogCode.Accepted:
+    #     sys.exit(0)
 
     try:
-        check_debug()
+        # check_debug()
         splash = SplashScreen()
         splash.show()
 
