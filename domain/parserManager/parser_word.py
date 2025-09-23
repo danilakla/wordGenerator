@@ -423,7 +423,6 @@ class ParserWord:
             elif isinstance(elem, UndefinedElement):
                 content = f"Undefined: {elem.content[:50]}{'...' if len(elem.content) > 50 else ''}"
 
-            print(f"{indent_str}{content}")
 
             if isinstance(elem, Header) and elem.children:
                 new_prefix = prefix + ("    " if is_last else "│   ")

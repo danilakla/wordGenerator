@@ -45,7 +45,7 @@ echo [3/7] Building executable with Nuitka...
 
 REM ====== COPY EXTRA FILES ======
 echo [4/7] Copying extra dependencies...
-xcopy /E /I /Y hwid_validate.pyd %DIST_DIR%\
+xcopy /E /I /Y cpuid.dll %DIST_DIR%\
 xcopy /E /I /Y resource %DIST_DIR%\resource\
 
 REM ====== CALCULATE HASH ======
