@@ -3,14 +3,12 @@ from PyQt6.QtWidgets import (
 )
 import requests, sys, os, hashlib, uuid, platform
 
+from util.hwid_validate import get_hwid
+
 SERVER_BASE = "https://93.125.104.173:8444"  # твой реальный бекенд
-import hwid_validate
 
 
 
-def get_hwid():
-    info = hwid_validate.get_hwid()
-    return info
 
 def get_exe_hash():
     
@@ -67,6 +65,7 @@ class LicenseDialog(QDialog):
         self.accept()
     
     def try_validate(self, checked=False):
+        print( get_hwid())
         if not os.path.exists(self.token_path):
             QMessageBox.warning(self, "Ошибка", "Файл лицензии не найден.")
             return
